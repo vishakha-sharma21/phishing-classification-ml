@@ -130,3 +130,28 @@ def bar_h(values: dict[str, float], xlabel: str, title: str, name: str, err: dic
     ax.set(xlabel=xlabel, title=title)
     fig.tight_layout()
     return save(fig, name)
+
+
+def grouped_bars(groups: list[str], series: dict[str, list[float]], name: str, title: str, ylabel: str,
+                 errors: dict[str, list[tuple[float, float]]] | None = None, ylim: tuple | None = None) -> str:
+    """Grouped vertical bars (one group per metric/class, one bar per model) with optional CIs."""
+    fig, ax = plt.subplots(figsize=(max(7, 1.3 * len(groups) * max(1, len(series)) / 2), 4.2))
+    k = len(series)
+    width = 0.8 / k
+    x = np.arange(len(groups))
+    for i, (label, vals) in enumerate(series.items()):
+        pos = x - 0.4 + width * (i + 0.5)
+        yerr = None
+        if errors and label in errors:
+            yerr = np.array([[v - lo for v, (lo, _) in zip(vals, errors[label])],
+                             [hi - v for v, (_, hi) in zip(vals, errors[label])]])
+        ax.bar(pos, vals, width * 0.92, color=SERIES[i], label=label, yerr=yerr, ecolor=INK_2,
+               error_kw={"lw": 1, "capsize": 2})
+    ax.set_xticks(x, groups)
+    ax.grid(axis="x", visible=False)
+    if ylim:
+        ax.set_ylim(*ylim)
+    ax.set(ylabel=ylabel, title=title)
+    ax.legend(fontsize=8, ncol=min(k, 4), loc="lower right")
+    fig.tight_layout()
+    return save(fig, name)

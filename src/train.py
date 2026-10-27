@@ -22,7 +22,8 @@ import pandas as pd
 from src.config import LABEL_MAPPING, MODELS_DIR, PROCESSED_DIR, RANDOM_SEED, REPORTS_DIR
 from src.data_loading import load_raw
 from src import plotting
-from src.evaluation import compute_metrics
+from src.cross_validation import cross_validate, paired_fold_difference, stratified_folds, summarise
+from src.evaluation import bootstrap_ci, compute_metrics, paired_bootstrap_diff, verdict
 from src.logistic_regression import LogisticRegression
 from src.preprocessing import TARGET, FeatureEncoder, PreparedData, prepare, save_split
 from src.decision_tree import DecisionTree
@@ -478,8 +479,161 @@ def stage_rf() -> dict[str, Any]:
     return out
 
 
+# ------------------------------------------------------------- stage: evaluation
+
+
+def _selected() -> dict[str, dict]:
+    res = load_results()
+    missing = [k for k in ("logistic_regression", "random_forest", "decision_tree") if k not in res]
+    if missing:
+        raise RuntimeError(f"run the earlier stages first: {missing}")
+    return {"lr": res["logistic_regression"]["selected"], "rf": res["random_forest"]["selected"],
+            "tree": res["decision_tree"]["selected"], "best_feature": res["baselines_val"]["best_single_feature"]["feature"]}
+
+
+def _per_class(m: dict[str, float]) -> dict[str, float]:
+    """Precision/recall/F1 for both classes from confusion counts."""
+    tp, fp, fn, tn = m["tp"], m["fp"], m["fn"], m["tn"]
+
+    def prf(tp_, fp_, fn_):
+        p = tp_ / (tp_ + fp_) if tp_ + fp_ else 0.0
+        r = tp_ / (tp_ + fn_) if tp_ + fn_ else 0.0
+        return p, r, (2 * p * r / (p + r) if p + r else 0.0)
+
+    (pp, rp, fp1), (pl, rl, fl) = prf(tp, fp, fn), prf(tn, fn, fp)
+    return {"phishing_precision": pp, "phishing_recall": rp, "phishing_f1": fp1,
+            "legitimate_precision": pl, "legitimate_recall": rl, "legitimate_f1": fl}
+
+
+def stage_evaluate() -> dict[str, Any]:
+    """Phase 7: 5-fold CV on train, then ONE evaluation of the frozen models on the test set."""
+    plotting.style()
+    sel = _selected()
+    data, enc = get_data()
+    raw, oh = matrices(data, enc["raw"]), matrices(data, enc["onehot"])
+    lr_enc = raw if sel["lr"]["encoding"] == "raw" else oh
+    Xtr, ytr = raw["train"]
+    lr_params = {"learning_rate": sel["lr"]["learning_rate"], "l2": sel["lr"]["l2"], "n_iter": LR_MAX_ITER, "tol": LR_TOL}
+    rf_params = {k: sel["rf"][k] for k in ("max_depth", "min_samples_leaf", "max_features", "n_estimators")}
+    tree_params = {k: sel["tree"][k] for k in ("max_depth", "min_samples_leaf")}
+    j_best = data.features.index(sel["best_feature"])
+
+    # ---- 1. Stratified 5-fold CV on the training partition (thresholds fixed from validation).
+    folds = stratified_folds(ytr, 5)
+    cv_models = {
+        "Custom LR": (lambda a, b, c: LogisticRegression(**lr_params).fit(a, b).predict_proba(c), lr_enc, sel["lr"]["threshold"]),
+        "Custom RF": (lambda a, b, c: RandomForest(seed=RANDOM_SEED, **rf_params).fit(a, b).predict_proba(c), raw, sel["rf"]["threshold"]),
+        "Custom tree": (lambda a, b, c: DecisionTree(**tree_params).fit(a, b).predict_proba(c), raw, sel["tree"]["threshold"]),
+        "sklearn LR (ref)": (lambda a, b, c: sk_proba(sklearn_logistic(sel["lr"]["l2"], len(b)).fit(a, b), c), lr_enc, sel["lr"]["threshold"]),
+        "sklearn RF (ref)": (lambda a, b, c: sk_proba(sklearn_forest(rf_params).fit(a, b), c), raw, sel["rf"]["threshold"]),
+        "Best single feature": (lambda a, b, c: SingleFeatureBaseline(j_best).fit(a, b).predict_proba(c), raw, 0.5),
+        "Majority": (lambda a, b, c: MajorityBaseline().fit(a, b).predict_proba(c), raw, 0.5),
+    }
+    cv_raw = {name: cross_validate(fn, mats["train"][0], ytr, folds, thr) for name, (fn, mats, thr) in cv_models.items()}
+    cv = {
+        "folds": 5, "seed": RANDOM_SEED, "partition": "train (4,004 rows)",
+        "summary": {k: summarise(v) for k, v in cv_raw.items()},
+        "per_fold": cv_raw,
+        "paired_rf_minus_lr": {m: paired_fold_difference(cv_raw["Custom RF"], cv_raw["Custom LR"], m)
+                               for m in ("roc_auc", "f1", "log_loss")},
+        "paired_rf_minus_tree": {m: paired_fold_difference(cv_raw["Custom RF"], cv_raw["Custom tree"], m)
+                                 for m in ("roc_auc", "f1", "log_loss")},
+    }
+
+    # ---- 2. Test set: frozen models (loaded from disk) and references trained on train only.
+    lr_model = LogisticRegression.load(MODELS_DIR / "logistic_regression.json")
+    rf_model = RandomForest.load(MODELS_DIR / "random_forest.json")
+    Xte_raw, yte = raw["test"]
+    Xte_lr = lr_enc["test"][0]
+    tree = DecisionTree(**tree_params).fit(Xtr, ytr)
+    probas = {
+        "Custom LR": (lr_model.predict_proba(Xte_lr), sel["lr"]["threshold"]),
+        "Custom RF": (rf_model.predict_proba(Xte_raw), sel["rf"]["threshold"]),
+        "Custom tree": (tree.predict_proba(Xte_raw), sel["tree"]["threshold"]),
+        "sklearn LR (ref)": (sk_proba(sklearn_logistic(sel["lr"]["l2"], len(ytr)).fit(lr_enc["train"][0], ytr), Xte_lr),
+                             sel["lr"]["threshold"]),
+        "sklearn RF (ref)": (sk_proba(sklearn_forest(rf_params).fit(Xtr, ytr), Xte_raw), sel["rf"]["threshold"]),
+        "Best single feature": (SingleFeatureBaseline(j_best).fit(Xtr, ytr).predict_proba(Xte_raw), 0.5),
+        "Majority": (MajorityBaseline().fit(Xtr, ytr).predict_proba(Xte_raw), 0.5),
+    }
+    test = {name: {**compute_metrics(yte, p, t), **_per_class(compute_metrics(yte, p, t))} for name, (p, t) in probas.items()}
+    test_at_05 = {name: compute_metrics(yte, p, 0.5) for name, (p, _) in probas.items()}
+    ci = {name: bootstrap_ci(yte, p, t, n_boot=1000) for name, (p, t) in probas.items() if name != "Majority"}
+
+    def pair(a: str, b: str) -> dict[str, Any]:
+        d = paired_bootstrap_diff(yte, probas[a][0], probas[a][1], probas[b][0], probas[b][1], n_boot=1000)
+        return {m: {**v, "verdict": verdict(v)} for m, v in d.items()}
+
+    comparisons = {
+        "Custom RF vs Custom LR": pair("Custom RF", "Custom LR"),
+        "Custom RF vs Custom tree": pair("Custom RF", "Custom tree"),
+        "Custom LR vs Best single feature": pair("Custom LR", "Best single feature"),
+        "Custom RF vs sklearn RF (ref)": pair("Custom RF", "sklearn RF (ref)"),
+        "Custom LR vs sklearn LR (ref)": pair("Custom LR", "sklearn LR (ref)"),
+    }
+
+    # ---- 3. Duplicate diagnostic: identical pipeline on the RAW (non-deduplicated) data.
+    from src.preprocessing import map_labels, split_indices
+    rawdf = map_labels(load_raw())
+    rs = split_indices(rawdf[TARGET])
+    enc_raw_lr = FeatureEncoder(sel["lr"]["encoding"]).fit(rawdf.iloc[rs.train])
+    Xr = enc["raw"].transform(rawdf)
+    Xr_lr = enc_raw_lr.transform(rawdf)
+    yr = rawdf[TARGET].to_numpy()
+    diag_rf = RandomForest(seed=RANDOM_SEED, **rf_params).fit(Xr[rs.train], yr[rs.train]).predict_proba(Xr[rs.val])
+    diag_lr = LogisticRegression(**lr_params).fit(Xr_lr[rs.train], yr[rs.train]).predict_proba(Xr_lr[rs.val])
+    duplicate_diag = {
+        "note": "Same hyperparameters, trained/evaluated on a split of the RAW 11,055 rows (duplicates kept). "
+                "Diagnostic only — shows how duplicates inflate scores; never used for selection.",
+        "raw_val_rows": int(len(rs.val)),
+        "Custom RF raw-split val": compute_metrics(yr[rs.val], diag_rf, sel["rf"]["threshold"]),
+        "Custom LR raw-split val": compute_metrics(yr[rs.val], diag_lr, sel["lr"]["threshold"]),
+        "Custom RF clean val": load_results()["random_forest"]["val_metrics_at_threshold"],
+        "Custom LR clean val": load_results()["logistic_regression"]["val_metrics_at_threshold"],
+    }
+
+    # ---- 4. Figures.
+    main = ["Custom LR", "Custom RF", "sklearn LR (ref)", "sklearn RF (ref)", "Best single feature"]
+    figs = {
+        "roc_pr": plotting.roc_pr_curves(yte, {k: probas[k][0] for k in main}, "eval_01_roc_pr_test.png", "test set"),
+        "confusion": plotting.confusion_grid({k: test[k] for k in ["Custom LR", "Custom RF", "Custom tree", "Best single feature"]},
+                                             "eval_02_confusion_test.png", "Confusion matrices — test set (rows: actual)"),
+    }
+    metrics = ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"]
+    show = ["Custom LR", "Custom RF", "Custom tree", "sklearn RF (ref)", "Best single feature"]
+    figs["comparison"] = plotting.grouped_bars(
+        ["Accuracy", "Precision", "Recall", "F1", "ROC-AUC", "PR-AUC"],
+        {k: [test[k][m] for m in metrics] for k in show}, "eval_03_model_comparison_test.png",
+        "Test-set metrics with 95% bootstrap CIs (positive = phishing)", "Score",
+        errors={k: [(ci[k][m]["low"], ci[k][m]["high"]) for m in metrics] for k in show}, ylim=(0.8, 1.005))
+    pc = ["phishing_precision", "phishing_recall", "phishing_f1", "legitimate_precision", "legitimate_recall", "legitimate_f1"]
+    figs["per_class"] = plotting.grouped_bars(
+        ["Phish P", "Phish R", "Phish F1", "Legit P", "Legit R", "Legit F1"],
+        {k: [test[k][m] for m in pc] for k in ["Custom LR", "Custom RF", "Custom tree"]},
+        "eval_04_per_class_test.png", "Per-class precision / recall / F1 — test set", "Score", ylim=(0.8, 1.005))
+    figs["cv"] = plotting.grouped_bars(
+        ["ROC-AUC", "PR-AUC", "F1", "Accuracy"],
+        {k: [cv["summary"][k][m]["mean"] for m in ("roc_auc", "pr_auc", "f1", "accuracy")]
+         for k in ["Custom LR", "Custom RF", "Custom tree", "sklearn LR (ref)", "sklearn RF (ref)"]},
+        "eval_05_cv_train.png", "5-fold CV on the training partition (mean ± 1 sd)", "Score",
+        errors={k: [(cv["summary"][k][m]["mean"] - cv["summary"][k][m]["std"],
+                     cv["summary"][k][m]["mean"] + cv["summary"][k][m]["std"]) for m in ("roc_auc", "pr_auc", "f1", "accuracy")]
+                for k in ["Custom LR", "Custom RF", "Custom tree", "sklearn LR (ref)", "sklearn RF (ref)"]},
+        ylim=(0.85, 1.005))
+    figs["threshold_test"] = plotting.threshold_plot(threshold_curve(yte, probas["Custom RF"][0]), sel["rf"]["threshold"],
+                                                     "eval_06_rf_threshold_test.png",
+                                                     "Custom RF: test precision / recall / F1 vs threshold (descriptive)")
+
+    out = {"positive_class": "phishing (1)", "test_rows": int(len(yte)),
+           "thresholds": {k: t for k, (_, t) in probas.items()},
+           "cross_validation": cv, "test": test, "test_at_threshold_0.5": test_at_05, "test_bootstrap_ci": ci,
+           "paired_comparisons_test": comparisons, "duplicate_diagnostic": duplicate_diag, "figures": figs}
+    update_results("evaluation", out)
+    return out
+
+
 STAGES = {"prepare": stage_prepare, "baselines": stage_baselines, "lr": stage_lr, "tree": stage_tree,
-          "rf": stage_rf}
+          "rf": stage_rf, "evaluate": stage_evaluate}
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -545,6 +699,25 @@ def _print_summary(name: str, res: Any) -> None:
         print("fit s / peak MB / infer ms / file MB / leaves / depth:", round(res["fit_seconds"], 2),
               round(res["peak_fit_memory_mb"], 1), round(res["inference_ms_per_858_rows"], 1),
               round(res["model_file_mb"], 2), res["mean_leaves_per_tree"], res["mean_depth_per_tree"])
+    elif name == "evaluate":
+        cols = ["accuracy", "precision", "recall", "f1", "macro_f1", "roc_auc", "pr_auc", "tp", "fp", "fn", "tn"]
+        print("TEST (each model at its validation-chosen threshold):")
+        print(pd.DataFrame(res["test"]).T[cols].astype(float).round(4).to_string())
+        print("\nCV on train (mean +- sd):")
+        print(pd.DataFrame({k: {m: f"{v[m]['mean']:.4f}+-{v[m]['std']:.4f}" for m in ("roc_auc", "f1", "log_loss")}
+                            for k, v in res["cross_validation"]["summary"].items()}).T.to_string())
+        print("CV paired RF-LR:", res["cross_validation"]["paired_rf_minus_lr"])
+        print("\nTest 95% CI (F1, ROC-AUC):")
+        for k, v in res["test_bootstrap_ci"].items():
+            print(f"  {k:<22} F1 {v['f1']['point']:.4f} [{v['f1']['low']:.4f}, {v['f1']['high']:.4f}]  "
+                  f"AUC {v['roc_auc']['point']:.4f} [{v['roc_auc']['low']:.4f}, {v['roc_auc']['high']:.4f}]")
+        print("\nPaired test comparisons:")
+        for k, v in res["paired_comparisons_test"].items():
+            print(f"  {k}: " + "; ".join(f"{m} {d['mean']:+.4f} [{d['low']:+.4f}, {d['high']:+.4f}] {d['verdict']}"
+                                         for m, d in v.items() if m in ("f1", "roc_auc")))
+        dd = res["duplicate_diagnostic"]
+        print("\nDuplicate diagnostic (acc / f1 / auc):", {k: (round(v["accuracy"], 4), round(v["f1"], 4), round(v["roc_auc"], 4))
+                                                         for k, v in dd.items() if isinstance(v, dict)})
     elif isinstance(res, dict):
         print(json.dumps(_round(res), indent=1, default=str)[:3000])
 
