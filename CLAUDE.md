@@ -9,6 +9,11 @@
 - 5,206 exact duplicate rows; 64 conflicting feature vectors. Proposed policy and status: `reports/cleaning_log.json`.
 - `redirect` is coded {0,1}; `domain_registration_length` correlates opposite to its documented rule.
 - Official feature description: `docs/source/`.
+- APPROVED (after Phase 1): duplicate policy (collapse exact dups, drop conflicting vectors, then split) and
+  label mapping -1 → phishing (1), +1 → legitimate (0). Cleaned data: 5,721 rows; split 4,004 / 858 / 859.
+- Phase 2 (EDA, `src/eda.py`, `notebooks/eda.ipynb`): label-dependent stats use train only; test untouched.
+  `prefix_suffix = 1` is 100% legitimate (all phishing rows are -1); `sslfinal_state`, `having_sub_domain`,
+  `web_traffic` are non-monotone in their codes (motivates one-hot for LR).
 
 ## 1. Project Overview
 

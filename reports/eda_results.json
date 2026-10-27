@@ -1,0 +1,835 @@
+{
+  "partition_sizes": {
+    "cleaned": 5721,
+    "train": 4004,
+    "val": 858,
+    "test": 859
+  },
+  "partition_phishing_rate": {
+    "train": 0.5165,
+    "val": 0.5163
+  },
+  "value_counts_cleaned": {
+    "having_ip_address": {
+      "-1": 2504,
+      "1": 3217
+    },
+    "url_length": {
+      "-1": 4558,
+      "0": 96,
+      "1": 1067
+    },
+    "shortining_service": {
+      "-1": 814,
+      "1": 4907
+    },
+    "having_at_symbol": {
+      "-1": 1199,
+      "1": 4522
+    },
+    "double_slash_redirecting": {
+      "-1": 820,
+      "1": 4901
+    },
+    "prefix_suffix": {
+      "-1": 5020,
+      "1": 701
+    },
+    "having_sub_domain": {
+      "-1": 1671,
+      "0": 2014,
+      "1": 2036
+    },
+    "sslfinal_state": {
+      "-1": 2076,
+      "0": 721,
+      "1": 2924
+    },
+    "domain_registration_length": {
+      "-1": 3737,
+      "1": 1984
+    },
+    "favicon": {
+      "-1": 1223,
+      "1": 4498
+    },
+    "port": {
+      "-1": 943,
+      "1": 4778
+    },
+    "https_token": {
+      "-1": 1009,
+      "1": 4712
+    },
+    "request_url": {
+      "-1": 2535,
+      "1": 3186
+    },
+    "url_of_anchor": {
+      "-1": 2002,
+      "0": 2529,
+      "1": 1190
+    },
+    "links_in_tags": {
+      "-1": 2167,
+      "0": 2200,
+      "1": 1354
+    },
+    "sfh": {
+      "-1": 4255,
+      "0": 516,
+      "1": 950
+    },
+    "submitting_to_email": {
+      "-1": 1243,
+      "1": 4478
+    },
+    "abnormal_url": {
+      "-1": 937,
+      "1": 4784
+    },
+    "redirect": {
+      "0": 4954,
+      "1": 767
+    },
+    "on_mouseover": {
+      "-1": 810,
+      "1": 4911
+    },
+    "rightclick": {
+      "-1": 287,
+      "1": 5434
+    },
+    "popupwindow": {
+      "-1": 1275,
+      "1": 4446
+    },
+    "iframe": {
+      "-1": 627,
+      "1": 5094
+    },
+    "age_of_domain": {
+      "-1": 2806,
+      "1": 2915
+    },
+    "dnsrecord": {
+      "-1": 1513,
+      "1": 4208
+    },
+    "web_traffic": {
+      "-1": 1463,
+      "0": 1487,
+      "1": 2771
+    },
+    "page_rank": {
+      "-1": 4056,
+      "1": 1665
+    },
+    "google_index": {
+      "-1": 985,
+      "1": 4736
+    },
+    "links_pointing_to_page": {
+      "-1": 317,
+      "0": 3093,
+      "1": 2311
+    },
+    "statistical_report": {
+      "-1": 884,
+      "1": 4837
+    }
+  },
+  "target_association_train": [
+    {
+      "feature": "sslfinal_state",
+      "cramers_v": 0.7778,
+      "mutual_info_bits": 0.5092,
+      "phishing_rate_by_value": {
+        "-1": 0.8894,
+        "0": 0.9938,
+        "1": 0.1402
+      },
+      "n_by_value": {
+        "-1": 1456,
+        "0": 487,
+        "1": 2061
+      }
+    },
+    {
+      "feature": "url_of_anchor",
+      "cramers_v": 0.7181,
+      "mutual_info_bits": 0.4676,
+      "phishing_rate_by_value": {
+        "-1": 0.9907,
+        "0": 0.3381,
+        "1": 0.0931
+      },
+      "n_by_value": {
+        "-1": 1397,
+        "0": 1801,
+        "1": 806
+      }
+    },
+    {
+      "feature": "having_sub_domain",
+      "cramers_v": 0.3996,
+      "mutual_info_bits": 0.1195,
+      "phishing_rate_by_value": {
+        "-1": 0.621,
+        "0": 0.7009,
+        "1": 0.2541
+      },
+      "n_by_value": {
+        "-1": 1145,
+        "0": 1411,
+        "1": 1448
+      }
+    },
+    {
+      "feature": "prefix_suffix",
+      "cramers_v": 0.3843,
+      "mutual_info_bits": 0.1406,
+      "phishing_rate_by_value": {
+        "-1": 0.588,
+        "1": 0.0
+      },
+      "n_by_value": {
+        "-1": 3517,
+        "1": 487
+      }
+    },
+    {
+      "feature": "web_traffic",
+      "cramers_v": 0.3268,
+      "mutual_info_bits": 0.0789,
+      "phishing_rate_by_value": {
+        "-1": 0.6431,
+        "0": 0.7041,
+        "1": 0.3498
+      },
+      "n_by_value": {
+        "-1": 1006,
+        "0": 1051,
+        "1": 1947
+      }
+    },
+    {
+      "feature": "sfh",
+      "cramers_v": 0.2827,
+      "mutual_info_bits": 0.0602,
+      "phishing_rate_by_value": {
+        "-1": 0.5964,
+        "0": 0.4096,
+        "1": 0.2247
+      },
+      "n_by_value": {
+        "-1": 2956,
+        "0": 376,
+        "1": 672
+      }
+    },
+    {
+      "feature": "links_in_tags",
+      "cramers_v": 0.2538,
+      "mutual_info_bits": 0.0476,
+      "phishing_rate_by_value": {
+        "-1": 0.6748,
+        "0": 0.4508,
+        "1": 0.3714
+      },
+      "n_by_value": {
+        "-1": 1516,
+        "0": 1524,
+        "1": 964
+      }
+    },
+    {
+      "feature": "request_url",
+      "cramers_v": 0.2373,
+      "mutual_info_bits": 0.0412,
+      "phishing_rate_by_value": {
+        "-1": 0.6488,
+        "1": 0.4097
+      },
+      "n_by_value": {
+        "-1": 1788,
+        "1": 2216
+      }
+    },
+    {
+      "feature": "domain_registration_length",
+      "cramers_v": 0.2203,
+      "mutual_info_bits": 0.0357,
+      "phishing_rate_by_value": {
+        "-1": 0.435,
+        "1": 0.666
+      },
+      "n_by_value": {
+        "-1": 2591,
+        "1": 1413
+      }
+    },
+    {
+      "feature": "google_index",
+      "cramers_v": 0.1356,
+      "mutual_info_bits": 0.0137,
+      "phishing_rate_by_value": {
+        "-1": 0.6687,
+        "1": 0.4859
+      },
+      "n_by_value": {
+        "-1": 670,
+        "1": 3334
+      }
+    },
+    {
+      "feature": "links_pointing_to_page",
+      "cramers_v": 0.124,
+      "mutual_info_bits": 0.0115,
+      "phishing_rate_by_value": {
+        "-1": 0.4242,
+        "0": 0.5746,
+        "1": 0.4525
+      },
+      "n_by_value": {
+        "-1": 231,
+        "0": 2151,
+        "1": 1622
+      }
+    },
+    {
+      "feature": "statistical_report",
+      "cramers_v": 0.1091,
+      "mutual_info_bits": 0.0089,
+      "phishing_rate_by_value": {
+        "-1": 0.6469,
+        "1": 0.4932
+      },
+      "n_by_value": {
+        "-1": 606,
+        "1": 3398
+      }
+    },
+    {
+      "feature": "having_ip_address",
+      "cramers_v": 0.095,
+      "mutual_info_bits": 0.0067,
+      "phishing_rate_by_value": {
+        "-1": 0.571,
+        "1": 0.474
+      },
+      "n_by_value": {
+        "-1": 1753,
+        "1": 2251
+      }
+    },
+    {
+      "feature": "abnormal_url",
+      "cramers_v": 0.0864,
+      "mutual_info_bits": 0.0056,
+      "phishing_rate_by_value": {
+        "-1": 0.4164,
+        "1": 0.5357
+      },
+      "n_by_value": {
+        "-1": 646,
+        "1": 3358
+      }
+    },
+    {
+      "feature": "shortining_service",
+      "cramers_v": 0.072,
+      "mutual_info_bits": 0.0039,
+      "phishing_rate_by_value": {
+        "-1": 0.4255,
+        "1": 0.5314
+      },
+      "n_by_value": {
+        "-1": 564,
+        "1": 3440
+      }
+    },
+    {
+      "feature": "url_length",
+      "cramers_v": 0.0713,
+      "mutual_info_bits": 0.004,
+      "phishing_rate_by_value": {
+        "-1": 0.5323,
+        "0": 0.6066,
+        "1": 0.4402
+      },
+      "n_by_value": {
+        "-1": 3207,
+        "0": 61,
+        "1": 736
+      }
+    },
+    {
+      "feature": "age_of_domain",
+      "cramers_v": 0.0644,
+      "mutual_info_bits": 0.0032,
+      "phishing_rate_by_value": {
+        "-1": 0.5504,
+        "1": 0.4842
+      },
+      "n_by_value": {
+        "-1": 1953,
+        "1": 2051
+      }
+    },
+    {
+      "feature": "page_rank",
+      "cramers_v": 0.0534,
+      "mutual_info_bits": 0.0022,
+      "phishing_rate_by_value": {
+        "-1": 0.5341,
+        "1": 0.4725
+      },
+      "n_by_value": {
+        "-1": 2859,
+        "1": 1145
+      }
+    },
+    {
+      "feature": "having_at_symbol",
+      "cramers_v": 0.0455,
+      "mutual_info_bits": 0.0017,
+      "phishing_rate_by_value": {
+        "-1": 0.5627,
+        "1": 0.504
+      },
+      "n_by_value": {
+        "-1": 853,
+        "1": 3151
+      }
+    },
+    {
+      "feature": "redirect",
+      "cramers_v": 0.0434,
+      "mutual_info_bits": 0.0015,
+      "phishing_rate_by_value": {
+        "0": 0.5074,
+        "1": 0.5749
+      },
+      "n_by_value": {
+        "0": 3463,
+        "1": 541
+      }
+    },
+    {
+      "feature": "https_token",
+      "cramers_v": 0.0419,
+      "mutual_info_bits": 0.0014,
+      "phishing_rate_by_value": {
+        "-1": 0.4677,
+        "1": 0.5268
+      },
+      "n_by_value": {
+        "-1": 697,
+        "1": 3307
+      }
+    },
+    {
+      "feature": "dnsrecord",
+      "cramers_v": 0.0398,
+      "mutual_info_bits": 0.0013,
+      "phishing_rate_by_value": {
+        "-1": 0.552,
+        "1": 0.5036
+      },
+      "n_by_value": {
+        "-1": 1067,
+        "1": 2937
+      }
+    },
+    {
+      "feature": "double_slash_redirecting",
+      "cramers_v": 0.0254,
+      "mutual_info_bits": 0.0006,
+      "phishing_rate_by_value": {
+        "-1": 0.4801,
+        "1": 0.5226
+      },
+      "n_by_value": {
+        "-1": 577,
+        "1": 3427
+      }
+    },
+    {
+      "feature": "on_mouseover",
+      "cramers_v": 0.0212,
+      "mutual_info_bits": 0.0005,
+      "phishing_rate_by_value": {
+        "-1": 0.5488,
+        "1": 0.5111
+      },
+      "n_by_value": {
+        "-1": 574,
+        "1": 3430
+      }
+    },
+    {
+      "feature": "port",
+      "cramers_v": 0.018,
+      "mutual_info_bits": 0.0004,
+      "phishing_rate_by_value": {
+        "-1": 0.5432,
+        "1": 0.5111
+      },
+      "n_by_value": {
+        "-1": 672,
+        "1": 3332
+      }
+    },
+    {
+      "feature": "favicon",
+      "cramers_v": 0.0051,
+      "mutual_info_bits": 0.0002,
+      "phishing_rate_by_value": {
+        "-1": 0.5006,
+        "1": 0.5208
+      },
+      "n_by_value": {
+        "-1": 857,
+        "1": 3147
+      }
+    },
+    {
+      "feature": "popupwindow",
+      "cramers_v": 0.0,
+      "mutual_info_bits": 0.0002,
+      "phishing_rate_by_value": {
+        "-1": 0.5028,
+        "1": 0.5205
+      },
+      "n_by_value": {
+        "-1": 903,
+        "1": 3101
+      }
+    },
+    {
+      "feature": "rightclick",
+      "cramers_v": 0.0,
+      "mutual_info_bits": 0.0001,
+      "phishing_rate_by_value": {
+        "-1": 0.5477,
+        "1": 0.5148
+      },
+      "n_by_value": {
+        "-1": 199,
+        "1": 3805
+      }
+    },
+    {
+      "feature": "submitting_to_email",
+      "cramers_v": 0.0,
+      "mutual_info_bits": 0.0,
+      "phishing_rate_by_value": {
+        "-1": 0.5181,
+        "1": 0.516
+      },
+      "n_by_value": {
+        "-1": 884,
+        "1": 3120
+      }
+    },
+    {
+      "feature": "iframe",
+      "cramers_v": 0.0,
+      "mutual_info_bits": 0.0,
+      "phishing_rate_by_value": {
+        "-1": 0.5124,
+        "1": 0.517
+      },
+      "n_by_value": {
+        "-1": 445,
+        "1": 3559
+      }
+    }
+  ],
+  "single_feature_val_auc": [
+    {
+      "feature": "sslfinal_state",
+      "val_roc_auc": 0.8976,
+      "ci_low": 0.8776,
+      "ci_high": 0.9168,
+      "train_roc_auc": 0.897
+    },
+    {
+      "feature": "url_of_anchor",
+      "val_roc_auc": 0.8583,
+      "ci_low": 0.8356,
+      "ci_high": 0.8803,
+      "train_roc_auc": 0.8757
+    },
+    {
+      "feature": "web_traffic",
+      "val_roc_auc": 0.7182,
+      "ci_low": 0.6854,
+      "ci_high": 0.7479,
+      "train_roc_auc": 0.6704
+    },
+    {
+      "feature": "having_sub_domain",
+      "val_roc_auc": 0.6924,
+      "ci_low": 0.6583,
+      "ci_high": 0.7268,
+      "train_roc_auc": 0.7061
+    },
+    {
+      "feature": "links_in_tags",
+      "val_roc_auc": 0.655,
+      "ci_low": 0.6176,
+      "ci_high": 0.6872,
+      "train_roc_auc": 0.6346
+    },
+    {
+      "feature": "request_url",
+      "val_roc_auc": 0.6391,
+      "ci_low": 0.6036,
+      "ci_high": 0.6683,
+      "train_roc_auc": 0.6183
+    },
+    {
+      "feature": "prefix_suffix",
+      "val_roc_auc": 0.6386,
+      "ci_low": 0.617,
+      "ci_high": 0.6585,
+      "train_roc_auc": 0.6258
+    },
+    {
+      "feature": "sfh",
+      "val_roc_auc": 0.6339,
+      "ci_low": 0.6061,
+      "ci_high": 0.6589,
+      "train_roc_auc": 0.624
+    },
+    {
+      "feature": "domain_registration_length",
+      "val_roc_auc": 0.5987,
+      "ci_low": 0.5662,
+      "ci_high": 0.6304,
+      "train_roc_auc": 0.6056
+    },
+    {
+      "feature": "links_pointing_to_page",
+      "val_roc_auc": 0.5829,
+      "ci_low": 0.5486,
+      "ci_high": 0.6149,
+      "train_roc_auc": 0.5639
+    },
+    {
+      "feature": "having_ip_address",
+      "val_roc_auc": 0.5543,
+      "ci_low": 0.5221,
+      "ci_high": 0.5862,
+      "train_roc_auc": 0.5478
+    },
+    {
+      "feature": "statistical_report",
+      "val_roc_auc": 0.5485,
+      "ci_low": 0.5252,
+      "ci_high": 0.5738,
+      "train_roc_auc": 0.5395
+    },
+    {
+      "feature": "age_of_domain",
+      "val_roc_auc": 0.5481,
+      "ci_low": 0.5144,
+      "ci_high": 0.5795,
+      "train_roc_auc": 0.5332
+    },
+    {
+      "feature": "url_length",
+      "val_roc_auc": 0.5446,
+      "ci_low": 0.5156,
+      "ci_high": 0.5736,
+      "train_roc_auc": 0.5299
+    },
+    {
+      "feature": "shortining_service",
+      "val_roc_auc": 0.542,
+      "ci_low": 0.5177,
+      "ci_high": 0.5643,
+      "train_roc_auc": 0.5257
+    },
+    {
+      "feature": "google_index",
+      "val_roc_auc": 0.5405,
+      "ci_low": 0.5147,
+      "ci_high": 0.5658,
+      "train_roc_auc": 0.551
+    },
+    {
+      "feature": "abnormal_url",
+      "val_roc_auc": 0.5367,
+      "ci_low": 0.5108,
+      "ci_high": 0.5612,
+      "train_roc_auc": 0.5323
+    },
+    {
+      "feature": "https_token",
+      "val_roc_auc": 0.5305,
+      "ci_low": 0.5054,
+      "ci_high": 0.5549,
+      "train_roc_auc": 0.517
+    },
+    {
+      "feature": "favicon",
+      "val_roc_auc": 0.5299,
+      "ci_low": 0.5022,
+      "ci_high": 0.5571,
+      "train_roc_auc": 0.5068
+    },
+    {
+      "feature": "double_slash_redirecting",
+      "val_roc_auc": 0.529,
+      "ci_low": 0.5071,
+      "ci_high": 0.5508,
+      "train_roc_auc": 0.5105
+    },
+    {
+      "feature": "popupwindow",
+      "val_roc_auc": 0.5276,
+      "ci_low": 0.5001,
+      "ci_high": 0.5538,
+      "train_roc_auc": 0.5062
+    },
+    {
+      "feature": "redirect",
+      "val_roc_auc": 0.5165,
+      "ci_low": 0.4938,
+      "ci_high": 0.5404,
+      "train_roc_auc": 0.5158
+    },
+    {
+      "feature": "page_rank",
+      "val_roc_auc": 0.5143,
+      "ci_low": 0.4853,
+      "ci_high": 0.5466,
+      "train_roc_auc": 0.5252
+    },
+    {
+      "feature": "iframe",
+      "val_roc_auc": 0.5081,
+      "ci_low": 0.488,
+      "ci_high": 0.5277,
+      "train_roc_auc": 0.5009
+    },
+    {
+      "feature": "having_at_symbol",
+      "val_roc_auc": 0.5032,
+      "ci_low": 0.4788,
+      "ci_high": 0.5295,
+      "train_roc_auc": 0.5197
+    },
+    {
+      "feature": "dnsrecord",
+      "val_roc_auc": 0.4994,
+      "ci_low": 0.4703,
+      "ci_high": 0.5295,
+      "train_roc_auc": 0.519
+    },
+    {
+      "feature": "rightclick",
+      "val_roc_auc": 0.496,
+      "ci_low": 0.4812,
+      "ci_high": 0.5106,
+      "train_roc_auc": 0.5031
+    },
+    {
+      "feature": "port",
+      "val_roc_auc": 0.4879,
+      "ci_low": 0.4637,
+      "ci_high": 0.5142,
+      "train_roc_auc": 0.509
+    },
+    {
+      "feature": "on_mouseover",
+      "val_roc_auc": 0.4863,
+      "ci_low": 0.4633,
+      "ci_high": 0.5086,
+      "train_roc_auc": 0.5093
+    },
+    {
+      "feature": "submitting_to_email",
+      "val_roc_auc": 0.4827,
+      "ci_low": 0.4574,
+      "ci_high": 0.5111,
+      "train_roc_auc": 0.5007
+    }
+  ],
+  "top_feature_pairs_cramers_v": [
+    {
+      "a": "favicon",
+      "b": "popupwindow",
+      "v": 0.9291
+    },
+    {
+      "a": "favicon",
+      "b": "port",
+      "v": 0.8116
+    },
+    {
+      "a": "shortining_service",
+      "b": "double_slash_redirecting",
+      "v": 0.8028
+    },
+    {
+      "a": "port",
+      "b": "submitting_to_email",
+      "v": 0.7776
+    },
+    {
+      "a": "port",
+      "b": "popupwindow",
+      "v": 0.7522
+    },
+    {
+      "a": "double_slash_redirecting",
+      "b": "https_token",
+      "v": 0.7362
+    },
+    {
+      "a": "on_mouseover",
+      "b": "popupwindow",
+      "v": 0.7358
+    },
+    {
+      "a": "shortining_service",
+      "b": "https_token",
+      "v": 0.7285
+    },
+    {
+      "a": "shortining_service",
+      "b": "abnormal_url",
+      "v": 0.7025
+    },
+    {
+      "a": "favicon",
+      "b": "on_mouseover",
+      "v": 0.6882
+    }
+  ],
+  "minus_one_count_median": {
+    "phishing": 10.0,
+    "legitimate": 7.0
+  },
+  "duplicate_leakage_diagnostic": {
+    "raw_val_rows": 1659,
+    "raw_val_rows_with_exact_twin_in_train": 1055,
+    "raw_val_overlap_percent": 63.59,
+    "lookup_accuracy_on_overlapping_val_rows": 0.9725,
+    "cleaned_val_overlap_percent": 0.0
+  },
+  "figures": {
+    "class_distribution": "reports/figures/01_class_distribution.png",
+    "duplicates": "reports/figures/02_duplicate_statistics.png",
+    "values_by_class": "reports/figures/03_feature_values_by_class.png",
+    "phishing_rate": "reports/figures/04_phishing_rate_by_value.png",
+    "association_heatmap": "reports/figures/05_association_heatmap.png",
+    "target_association": "reports/figures/06_feature_target_association.png",
+    "single_feature_auc": "reports/figures/07_single_feature_val_auc.png",
+    "minus_one_count": "reports/figures/08_minus_one_count_by_class.png"
+  }
+}
