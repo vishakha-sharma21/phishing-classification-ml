@@ -4804,5 +4804,835 @@
       "mi_top_k": "reports/figures/ovf_03_mi_top_k.png",
       "ablation": "reports/figures/ovf_04_ablation_rf.png"
     }
+  },
+  "interpretation": {
+    "lr_coefficients": {
+      "having_ip_address=-1": 1.5277,
+      "url_length=-1": 0.3464,
+      "url_length=0": 0.2236,
+      "shortining_service=-1": -0.8771,
+      "having_at_symbol=-1": 0.7426,
+      "double_slash_redirecting=-1": 0.4416,
+      "prefix_suffix=-1": 4.6813,
+      "having_sub_domain=-1": 1.5308,
+      "having_sub_domain=0": 1.7361,
+      "sslfinal_state=-1": 3.4591,
+      "sslfinal_state=0": 5.4146,
+      "domain_registration_length=-1": -0.6291,
+      "favicon=-1": -1.0401,
+      "port=-1": 0.0135,
+      "https_token=-1": -0.8173,
+      "request_url=-1": 0.4366,
+      "url_of_anchor=-1": 6.1199,
+      "url_of_anchor=0": 1.3698,
+      "links_in_tags=-1": 0.9229,
+      "links_in_tags=0": -0.7478,
+      "sfh=-1": 1.5675,
+      "sfh=0": 0.0464,
+      "submitting_to_email=-1": -0.113,
+      "abnormal_url=-1": -1.1951,
+      "redirect=0": -0.9401,
+      "on_mouseover=-1": 0.6078,
+      "rightclick=-1": 0.0121,
+      "popupwindow=-1": -0.0936,
+      "iframe=-1": -0.0081,
+      "age_of_domain=-1": -0.217,
+      "dnsrecord=-1": 1.0604,
+      "web_traffic=-1": 0.1221,
+      "web_traffic=0": 1.7639,
+      "page_rank=-1": -0.0018,
+      "google_index=-1": 1.3146,
+      "links_pointing_to_page=-1": 1.216,
+      "links_pointing_to_page=0": 1.3821,
+      "statistical_report=-1": 0.8185
+    },
+    "lr_intercept": -11.6782,
+    "lr_l2_path": {
+      "0.0": {
+        "weights": {
+          "having_ip_address=-1": 1.6642,
+          "url_length=-1": 0.4266,
+          "url_length=0": 0.3273,
+          "shortining_service=-1": -0.946,
+          "having_at_symbol=-1": 0.8301,
+          "double_slash_redirecting=-1": 0.5481,
+          "prefix_suffix=-1": 5.8492,
+          "having_sub_domain=-1": 1.6656,
+          "having_sub_domain=0": 1.8773,
+          "sslfinal_state=-1": 3.6651,
+          "sslfinal_state=0": 6.4068,
+          "domain_registration_length=-1": -0.7108,
+          "favicon=-1": -1.2047,
+          "port=-1": -0.076,
+          "https_token=-1": -0.9185,
+          "request_url=-1": 0.4393,
+          "url_of_anchor=-1": 6.9521,
+          "url_of_anchor=0": 1.5678,
+          "links_in_tags=-1": 0.9193,
+          "links_in_tags=0": -0.874,
+          "sfh=-1": 1.6303,
+          "sfh=0": -0.0454,
+          "submitting_to_email=-1": -0.1107,
+          "abnormal_url=-1": -1.3842,
+          "redirect=0": -1.0413,
+          "on_mouseover=-1": 0.7114,
+          "rightclick=-1": 0.0392,
+          "popupwindow=-1": -0.0207,
+          "iframe=-1": -0.0359,
+          "age_of_domain=-1": -0.2722,
+          "dnsrecord=-1": 1.1804,
+          "web_traffic=-1": 0.0649,
+          "web_traffic=0": 1.8945,
+          "page_rank=-1": -0.0523,
+          "google_index=-1": 1.4158,
+          "links_pointing_to_page=-1": 1.3227,
+          "links_pointing_to_page=0": 1.484,
+          "statistical_report=-1": 0.9255
+        },
+        "l2_norm": 13.1678,
+        "iterations": 30000
+      },
+      "0.0001": {
+        "weights": {
+          "having_ip_address=-1": 1.5273,
+          "url_length=-1": 0.3461,
+          "url_length=0": 0.2236,
+          "shortining_service=-1": -0.8771,
+          "having_at_symbol=-1": 0.7425,
+          "double_slash_redirecting=-1": 0.4412,
+          "prefix_suffix=-1": 4.6756,
+          "having_sub_domain=-1": 1.5306,
+          "having_sub_domain=0": 1.7358,
+          "sslfinal_state=-1": 3.4587,
+          "sslfinal_state=0": 5.4141,
+          "domain_registration_length=-1": -0.6293,
+          "favicon=-1": -1.0396,
+          "port=-1": 0.0135,
+          "https_token=-1": -0.8172,
+          "request_url=-1": 0.4364,
+          "url_of_anchor=-1": 6.119,
+          "url_of_anchor=0": 1.3694,
+          "links_in_tags=-1": 0.9226,
+          "links_in_tags=0": -0.748,
+          "sfh=-1": 1.5669,
+          "sfh=0": 0.0461,
+          "submitting_to_email=-1": -0.113,
+          "abnormal_url=-1": -1.195,
+          "redirect=0": -0.9406,
+          "on_mouseover=-1": 0.6079,
+          "rightclick=-1": 0.0121,
+          "popupwindow=-1": -0.0938,
+          "iframe=-1": -0.0082,
+          "age_of_domain=-1": -0.217,
+          "dnsrecord=-1": 1.0601,
+          "web_traffic=-1": 0.122,
+          "web_traffic=0": 1.7637,
+          "page_rank=-1": -0.0019,
+          "google_index=-1": 1.3145,
+          "links_pointing_to_page=-1": 1.2158,
+          "links_pointing_to_page=0": 1.3819,
+          "statistical_report=-1": 0.8184
+        },
+        "l2_norm": 11.4375,
+        "iterations": 29603
+      },
+      "0.001": {
+        "weights": {
+          "having_ip_address=-1": 1.0501,
+          "url_length=-1": 0.1427,
+          "url_length=0": 0.0641,
+          "shortining_service=-1": -0.6408,
+          "having_at_symbol=-1": 0.4844,
+          "double_slash_redirecting=-1": 0.1857,
+          "prefix_suffix=-1": 2.5406,
+          "having_sub_domain=-1": 1.1002,
+          "having_sub_domain=0": 1.2791,
+          "sslfinal_state=-1": 2.802,
+          "sslfinal_state=0": 3.2847,
+          "domain_registration_length=-1": -0.4419,
+          "favicon=-1": -0.5216,
+          "port=-1": 0.0674,
+          "https_token=-1": -0.5045,
+          "request_url=-1": 0.4106,
+          "url_of_anchor=-1": 4.1206,
+          "url_of_anchor=0": 0.7261,
+          "links_in_tags=-1": 0.8886,
+          "links_in_tags=0": -0.4437,
+          "sfh=-1": 1.2394,
+          "sfh=0": 0.1236,
+          "submitting_to_email=-1": -0.0682,
+          "abnormal_url=-1": -0.7264,
+          "redirect=0": -0.6548,
+          "on_mouseover=-1": 0.3346,
+          "rightclick=-1": -0.0306,
+          "popupwindow=-1": -0.215,
+          "iframe=-1": -0.0001,
+          "age_of_domain=-1": -0.0761,
+          "dnsrecord=-1": 0.6564,
+          "web_traffic=-1": 0.2329,
+          "web_traffic=0": 1.3264,
+          "page_rank=-1": 0.0918,
+          "google_index=-1": 0.9685,
+          "links_pointing_to_page=-1": 0.7395,
+          "links_pointing_to_page=0": 0.991,
+          "statistical_report=-1": 0.5272
+        },
+        "l2_norm": 7.5373,
+        "iterations": 11584
+      },
+      "0.01": {
+        "weights": {
+          "having_ip_address=-1": 0.4641,
+          "url_length=-1": 0.0304,
+          "url_length=0": 0.024,
+          "shortining_service=-1": -0.272,
+          "having_at_symbol=-1": 0.189,
+          "double_slash_redirecting=-1": 0.0274,
+          "prefix_suffix=-1": 1.0923,
+          "having_sub_domain=-1": 0.5508,
+          "having_sub_domain=0": 0.7507,
+          "sslfinal_state=-1": 1.7904,
+          "sslfinal_state=0": 1.4073,
+          "domain_registration_length=-1": -0.3024,
+          "favicon=-1": -0.1523,
+          "port=-1": 0.0169,
+          "https_token=-1": -0.1805,
+          "request_url=-1": 0.3426,
+          "url_of_anchor=-1": 2.1427,
+          "url_of_anchor=0": -0.0223,
+          "links_in_tags=-1": 0.6799,
+          "links_in_tags=0": -0.1909,
+          "sfh=-1": 0.6957,
+          "sfh=0": 0.0219,
+          "submitting_to_email=-1": -0.012,
+          "abnormal_url=-1": -0.3234,
+          "redirect=0": -0.2506,
+          "on_mouseover=-1": 0.0929,
+          "rightclick=-1": -0.0195,
+          "popupwindow=-1": -0.128,
+          "iframe=-1": -0.0387,
+          "age_of_domain=-1": 0.028,
+          "dnsrecord=-1": 0.2166,
+          "web_traffic=-1": 0.2498,
+          "web_traffic=0": 0.7483,
+          "page_rank=-1": 0.1144,
+          "google_index=-1": 0.4787,
+          "links_pointing_to_page=-1": 0.1707,
+          "links_pointing_to_page=0": 0.4665,
+          "statistical_report=-1": 0.235
+        },
+        "l2_norm": 3.8499,
+        "iterations": 3479
+      },
+      "0.03": {
+        "weights": {
+          "having_ip_address=-1": 0.2761,
+          "url_length=-1": 0.0225,
+          "url_length=0": 0.0162,
+          "shortining_service=-1": -0.1528,
+          "having_at_symbol=-1": 0.1018,
+          "double_slash_redirecting=-1": -0.005,
+          "prefix_suffix=-1": 0.6732,
+          "having_sub_domain=-1": 0.3392,
+          "having_sub_domain=0": 0.529,
+          "sslfinal_state=-1": 1.2342,
+          "sslfinal_state=0": 0.802,
+          "domain_registration_length=-1": -0.2533,
+          "favicon=-1": -0.0812,
+          "port=-1": 0.0089,
+          "https_token=-1": -0.097,
+          "request_url=-1": 0.2868,
+          "url_of_anchor=-1": 1.4257,
+          "url_of_anchor=0": -0.2108,
+          "links_in_tags=-1": 0.4919,
+          "links_in_tags=0": -0.1392,
+          "sfh=-1": 0.4695,
+          "sfh=0": -0.0159,
+          "submitting_to_email=-1": -0.0086,
+          "abnormal_url=-1": -0.1927,
+          "redirect=0": -0.1283,
+          "on_mouseover=-1": 0.0426,
+          "rightclick=-1": -0.007,
+          "popupwindow=-1": -0.0754,
+          "iframe=-1": -0.0333,
+          "age_of_domain=-1": 0.0445,
+          "dnsrecord=-1": 0.1114,
+          "web_traffic=-1": 0.1996,
+          "web_traffic=0": 0.496,
+          "page_rank=-1": 0.0887,
+          "google_index=-1": 0.2907,
+          "links_pointing_to_page=-1": 0.0518,
+          "links_pointing_to_page=0": 0.2887,
+          "statistical_report=-1": 0.1496
+        },
+        "l2_norm": 2.5318,
+        "iterations": 1743
+      },
+      "0.1": {
+        "weights": {
+          "having_ip_address=-1": 0.138,
+          "url_length=-1": 0.0247,
+          "url_length=0": 0.0086,
+          "shortining_service=-1": -0.0729,
+          "having_at_symbol=-1": 0.048,
+          "double_slash_redirecting=-1": -0.0146,
+          "prefix_suffix=-1": 0.3476,
+          "having_sub_domain=-1": 0.1718,
+          "having_sub_domain=0": 0.3081,
+          "sslfinal_state=-1": 0.6856,
+          "sslfinal_state=0": 0.37,
+          "domain_registration_length=-1": -0.1829,
+          "favicon=-1": -0.0359,
+          "port=-1": 0.0074,
+          "https_token=-1": -0.0462,
+          "request_url=-1": 0.2058,
+          "url_of_anchor=-1": 0.801,
+          "url_of_anchor=0": -0.2398,
+          "links_in_tags=-1": 0.286,
+          "links_in_tags=0": -0.0938,
+          "sfh=-1": 0.2704,
+          "sfh=0": -0.0268,
+          "submitting_to_email=-1": -0.0058,
+          "abnormal_url=-1": -0.0949,
+          "redirect=0": -0.054,
+          "on_mouseover=-1": 0.0183,
+          "rightclick=-1": 0.0001,
+          "popupwindow=-1": -0.0338,
+          "iframe=-1": -0.0165,
+          "age_of_domain=-1": 0.0443,
+          "dnsrecord=-1": 0.052,
+          "web_traffic=-1": 0.1292,
+          "web_traffic=0": 0.2668,
+          "page_rank=-1": 0.0544,
+          "google_index=-1": 0.1454,
+          "links_pointing_to_page=-1": 0.0019,
+          "links_pointing_to_page=0": 0.1543,
+          "statistical_report=-1": 0.0858
+        },
+        "l2_norm": 1.4085,
+        "iterations": 769
+      }
+    },
+    "rf_impurity_importance": {
+      "having_ip_address": 0.0142,
+      "url_length": 0.0104,
+      "shortining_service": 0.0053,
+      "having_at_symbol": 0.0065,
+      "double_slash_redirecting": 0.0024,
+      "prefix_suffix": 0.0457,
+      "having_sub_domain": 0.0543,
+      "sslfinal_state": 0.4488,
+      "domain_registration_length": 0.0127,
+      "favicon": 0.0054,
+      "port": 0.0017,
+      "https_token": 0.0037,
+      "request_url": 0.0132,
+      "url_of_anchor": 0.2159,
+      "links_in_tags": 0.0382,
+      "sfh": 0.0189,
+      "submitting_to_email": 0.0045,
+      "abnormal_url": 0.0036,
+      "redirect": 0.0046,
+      "on_mouseover": 0.0025,
+      "rightclick": 0.0011,
+      "popupwindow": 0.0023,
+      "iframe": 0.0012,
+      "age_of_domain": 0.0105,
+      "dnsrecord": 0.006,
+      "web_traffic": 0.033,
+      "page_rank": 0.0062,
+      "google_index": 0.0086,
+      "links_pointing_to_page": 0.0168,
+      "statistical_report": 0.0021
+    },
+    "permutation_importance_val": {
+      "Custom LR": [
+        {
+          "feature": "url_of_anchor",
+          "mean_auc_drop": 0.0766,
+          "std": 0.0096
+        },
+        {
+          "feature": "sslfinal_state",
+          "mean_auc_drop": 0.0547,
+          "std": 0.0043
+        },
+        {
+          "feature": "prefix_suffix",
+          "mean_auc_drop": 0.0158,
+          "std": 0.0029
+        },
+        {
+          "feature": "web_traffic",
+          "mean_auc_drop": 0.0056,
+          "std": 0.0008
+        },
+        {
+          "feature": "having_ip_address",
+          "mean_auc_drop": 0.0041,
+          "std": 0.0008
+        },
+        {
+          "feature": "sfh",
+          "mean_auc_drop": 0.003,
+          "std": 0.0012
+        },
+        {
+          "feature": "links_in_tags",
+          "mean_auc_drop": 0.0026,
+          "std": 0.0009
+        },
+        {
+          "feature": "links_pointing_to_page",
+          "mean_auc_drop": 0.0024,
+          "std": 0.0009
+        },
+        {
+          "feature": "dnsrecord",
+          "mean_auc_drop": 0.0018,
+          "std": 0.0005
+        },
+        {
+          "feature": "having_sub_domain",
+          "mean_auc_drop": 0.0017,
+          "std": 0.0008
+        },
+        {
+          "feature": "https_token",
+          "mean_auc_drop": 0.0012,
+          "std": 0.0005
+        },
+        {
+          "feature": "google_index",
+          "mean_auc_drop": 0.001,
+          "std": 0.0005
+        },
+        {
+          "feature": "shortining_service",
+          "mean_auc_drop": 0.0008,
+          "std": 0.0006
+        },
+        {
+          "feature": "abnormal_url",
+          "mean_auc_drop": 0.0007,
+          "std": 0.0004
+        },
+        {
+          "feature": "statistical_report",
+          "mean_auc_drop": 0.0005,
+          "std": 0.0001
+        },
+        {
+          "feature": "redirect",
+          "mean_auc_drop": 0.0004,
+          "std": 0.0004
+        },
+        {
+          "feature": "having_at_symbol",
+          "mean_auc_drop": 0.0004,
+          "std": 0.0005
+        },
+        {
+          "feature": "age_of_domain",
+          "mean_auc_drop": 0.0002,
+          "std": 0.0001
+        },
+        {
+          "feature": "request_url",
+          "mean_auc_drop": 0.0001,
+          "std": 0.0004
+        },
+        {
+          "feature": "on_mouseover",
+          "mean_auc_drop": 0.0001,
+          "std": 0.0002
+        },
+        {
+          "feature": "favicon",
+          "mean_auc_drop": 0.0,
+          "std": 0.0005
+        },
+        {
+          "feature": "domain_registration_length",
+          "mean_auc_drop": 0.0,
+          "std": 0.0006
+        },
+        {
+          "feature": "page_rank",
+          "mean_auc_drop": 0.0,
+          "std": 0.0
+        },
+        {
+          "feature": "iframe",
+          "mean_auc_drop": 0.0,
+          "std": 0.0
+        },
+        {
+          "feature": "rightclick",
+          "mean_auc_drop": 0.0,
+          "std": 0.0
+        },
+        {
+          "feature": "port",
+          "mean_auc_drop": -0.0,
+          "std": 0.0
+        },
+        {
+          "feature": "double_slash_redirecting",
+          "mean_auc_drop": -0.0,
+          "std": 0.0002
+        },
+        {
+          "feature": "submitting_to_email",
+          "mean_auc_drop": -0.0,
+          "std": 0.0
+        },
+        {
+          "feature": "url_length",
+          "mean_auc_drop": -0.0001,
+          "std": 0.0002
+        },
+        {
+          "feature": "popupwindow",
+          "mean_auc_drop": -0.0001,
+          "std": 0.0
+        }
+      ],
+      "Custom RF": [
+        {
+          "feature": "url_of_anchor",
+          "mean_auc_drop": 0.1059,
+          "std": 0.0129
+        },
+        {
+          "feature": "sslfinal_state",
+          "mean_auc_drop": 0.0632,
+          "std": 0.005
+        },
+        {
+          "feature": "prefix_suffix",
+          "mean_auc_drop": 0.0175,
+          "std": 0.0021
+        },
+        {
+          "feature": "web_traffic",
+          "mean_auc_drop": 0.0111,
+          "std": 0.0011
+        },
+        {
+          "feature": "links_in_tags",
+          "mean_auc_drop": 0.009,
+          "std": 0.0018
+        },
+        {
+          "feature": "having_sub_domain",
+          "mean_auc_drop": 0.0048,
+          "std": 0.0015
+        },
+        {
+          "feature": "having_ip_address",
+          "mean_auc_drop": 0.0038,
+          "std": 0.001
+        },
+        {
+          "feature": "sfh",
+          "mean_auc_drop": 0.0023,
+          "std": 0.0015
+        },
+        {
+          "feature": "dnsrecord",
+          "mean_auc_drop": 0.0022,
+          "std": 0.0005
+        },
+        {
+          "feature": "links_pointing_to_page",
+          "mean_auc_drop": 0.0018,
+          "std": 0.0007
+        },
+        {
+          "feature": "url_length",
+          "mean_auc_drop": 0.0018,
+          "std": 0.0003
+        },
+        {
+          "feature": "request_url",
+          "mean_auc_drop": 0.0015,
+          "std": 0.0004
+        },
+        {
+          "feature": "age_of_domain",
+          "mean_auc_drop": 0.0014,
+          "std": 0.0008
+        },
+        {
+          "feature": "https_token",
+          "mean_auc_drop": 0.0013,
+          "std": 0.0005
+        },
+        {
+          "feature": "google_index",
+          "mean_auc_drop": 0.0009,
+          "std": 0.0006
+        },
+        {
+          "feature": "domain_registration_length",
+          "mean_auc_drop": 0.0009,
+          "std": 0.0008
+        },
+        {
+          "feature": "double_slash_redirecting",
+          "mean_auc_drop": 0.0006,
+          "std": 0.0003
+        },
+        {
+          "feature": "submitting_to_email",
+          "mean_auc_drop": 0.0003,
+          "std": 0.0001
+        },
+        {
+          "feature": "shortining_service",
+          "mean_auc_drop": 0.0003,
+          "std": 0.0003
+        },
+        {
+          "feature": "redirect",
+          "mean_auc_drop": 0.0003,
+          "std": 0.0002
+        },
+        {
+          "feature": "page_rank",
+          "mean_auc_drop": 0.0002,
+          "std": 0.0004
+        },
+        {
+          "feature": "favicon",
+          "mean_auc_drop": 0.0001,
+          "std": 0.0002
+        },
+        {
+          "feature": "on_mouseover",
+          "mean_auc_drop": 0.0001,
+          "std": 0.0001
+        },
+        {
+          "feature": "iframe",
+          "mean_auc_drop": 0.0001,
+          "std": 0.0
+        },
+        {
+          "feature": "popupwindow",
+          "mean_auc_drop": 0.0001,
+          "std": 0.0002
+        },
+        {
+          "feature": "abnormal_url",
+          "mean_auc_drop": 0.0001,
+          "std": 0.0001
+        },
+        {
+          "feature": "port",
+          "mean_auc_drop": 0.0,
+          "std": 0.0001
+        },
+        {
+          "feature": "rightclick",
+          "mean_auc_drop": 0.0,
+          "std": 0.0
+        },
+        {
+          "feature": "having_at_symbol",
+          "mean_auc_drop": 0.0,
+          "std": 0.0003
+        },
+        {
+          "feature": "statistical_report",
+          "mean_auc_drop": -0.0,
+          "std": 0.0001
+        }
+      ]
+    },
+    "importance_rank_agreement_spearman": {
+      "rf_impurity": {
+        "rf_impurity": 1.0,
+        "rf_permutation": 0.878,
+        "lr_permutation": 0.725
+      },
+      "rf_permutation": {
+        "rf_impurity": 0.878,
+        "rf_permutation": 1.0,
+        "lr_permutation": 0.711
+      },
+      "lr_permutation": {
+        "rf_impurity": 0.725,
+        "rf_permutation": 0.711,
+        "lr_permutation": 1.0
+      }
+    },
+    "stability": {
+      "rf_impurity_across_seeds": {
+        "mean_pairwise_spearman": 0.9949,
+        "min_pairwise_spearman": 0.9911,
+        "top10_frequency": {
+          "having_ip_address": 1.0,
+          "prefix_suffix": 1.0,
+          "having_sub_domain": 1.0,
+          "sslfinal_state": 1.0,
+          "request_url": 1.0,
+          "url_of_anchor": 1.0,
+          "links_in_tags": 1.0,
+          "sfh": 1.0,
+          "web_traffic": 1.0,
+          "links_pointing_to_page": 1.0
+        },
+        "std_by_feature": {
+          "having_ip_address": 0.0004,
+          "url_length": 0.0002,
+          "shortining_service": 0.0003,
+          "having_at_symbol": 0.0001,
+          "double_slash_redirecting": 0.0002,
+          "prefix_suffix": 0.0019,
+          "having_sub_domain": 0.0021,
+          "sslfinal_state": 0.0113,
+          "domain_registration_length": 0.0001,
+          "favicon": 0.0002,
+          "port": 0.0002,
+          "https_token": 0.0003,
+          "request_url": 0.0003,
+          "url_of_anchor": 0.0093,
+          "links_in_tags": 0.0026,
+          "sfh": 0.0005,
+          "submitting_to_email": 0.0003,
+          "abnormal_url": 0.0004,
+          "redirect": 0.0,
+          "on_mouseover": 0.0002,
+          "rightclick": 0.0001,
+          "popupwindow": 0.0001,
+          "iframe": 0.0001,
+          "age_of_domain": 0.0001,
+          "dnsrecord": 0.0003,
+          "web_traffic": 0.0004,
+          "page_rank": 0.0002,
+          "google_index": 0.0005,
+          "links_pointing_to_page": 0.0003,
+          "statistical_report": 0.0002
+        }
+      },
+      "lr_coefficients_across_folds": {
+        "mean_pairwise_spearman": 0.9398,
+        "min_pairwise_spearman": 0.9147,
+        "top10_frequency": {
+          "having_ip_address=-1": 1.0,
+          "prefix_suffix=-1": 1.0,
+          "having_sub_domain=0": 1.0,
+          "sslfinal_state=-1": 1.0,
+          "sslfinal_state=0": 1.0,
+          "url_of_anchor=-1": 1.0,
+          "sfh=-1": 1.0,
+          "web_traffic=0": 1.0,
+          "having_sub_domain=-1": 0.8,
+          "url_of_anchor=0": 0.4,
+          "links_pointing_to_page=0": 0.4,
+          "abnormal_url=-1": 0.2,
+          "links_pointing_to_page=-1": 0.2
+        },
+        "mean": {
+          "having_ip_address=-1": 1.5439,
+          "url_length=-1": 0.3491,
+          "url_length=0": 0.2338,
+          "shortining_service=-1": -0.9109,
+          "having_at_symbol=-1": 0.7435,
+          "double_slash_redirecting=-1": 0.4183,
+          "prefix_suffix=-1": 4.6891,
+          "having_sub_domain=-1": 1.5315,
+          "having_sub_domain=0": 1.7453,
+          "sslfinal_state=-1": 3.4823,
+          "sslfinal_state=0": 5.4321,
+          "domain_registration_length=-1": -0.6339,
+          "favicon=-1": -1.046,
+          "port=-1": 0.0393,
+          "https_token=-1": -0.827,
+          "request_url=-1": 0.4312,
+          "url_of_anchor=-1": 6.1662,
+          "url_of_anchor=0": 1.3816,
+          "links_in_tags=-1": 0.9316,
+          "links_in_tags=0": -0.7432,
+          "sfh=-1": 1.5817,
+          "sfh=0": 0.0489,
+          "submitting_to_email=-1": -0.1263,
+          "abnormal_url=-1": -1.1725,
+          "redirect=0": -0.9508,
+          "on_mouseover=-1": 0.6144,
+          "rightclick=-1": 0.0157,
+          "popupwindow=-1": -0.0893,
+          "iframe=-1": -0.0327,
+          "age_of_domain=-1": -0.2168,
+          "dnsrecord=-1": 1.0724,
+          "web_traffic=-1": 0.1242,
+          "web_traffic=0": 1.7778,
+          "page_rank=-1": -0.0076,
+          "google_index=-1": 1.3174,
+          "links_pointing_to_page=-1": 1.2226,
+          "links_pointing_to_page=0": 1.3876,
+          "statistical_report=-1": 0.8202
+        },
+        "std": {
+          "having_ip_address=-1": 0.0985,
+          "url_length=-1": 0.15,
+          "url_length=0": 0.2677,
+          "shortining_service=-1": 0.3344,
+          "having_at_symbol=-1": 0.1541,
+          "double_slash_redirecting=-1": 0.4794,
+          "prefix_suffix=-1": 0.1856,
+          "having_sub_domain=-1": 0.1289,
+          "having_sub_domain=0": 0.131,
+          "sslfinal_state=-1": 0.0385,
+          "sslfinal_state=0": 0.1038,
+          "domain_registration_length=-1": 0.1127,
+          "favicon=-1": 0.2694,
+          "port=-1": 0.1618,
+          "https_token=-1": 0.2618,
+          "request_url=-1": 0.1139,
+          "url_of_anchor=-1": 0.2497,
+          "url_of_anchor=0": 0.111,
+          "links_in_tags=-1": 0.0977,
+          "links_in_tags=0": 0.0657,
+          "sfh=-1": 0.1114,
+          "sfh=0": 0.0828,
+          "submitting_to_email=-1": 0.112,
+          "abnormal_url=-1": 0.2234,
+          "redirect=0": 0.2438,
+          "on_mouseover=-1": 0.2159,
+          "rightclick=-1": 0.1686,
+          "popupwindow=-1": 0.1466,
+          "iframe=-1": 0.2446,
+          "age_of_domain=-1": 0.0666,
+          "dnsrecord=-1": 0.0782,
+          "web_traffic=-1": 0.043,
+          "web_traffic=0": 0.0796,
+          "page_rank=-1": 0.0452,
+          "google_index=-1": 0.1085,
+          "links_pointing_to_page=-1": 0.2508,
+          "links_pointing_to_page=0": 0.1107,
+          "statistical_report=-1": 0.1486
+        },
+        "sign_flips": [
+          "url_length=0",
+          "double_slash_redirecting=-1",
+          "port=-1",
+          "sfh=0",
+          "submitting_to_email=-1",
+          "rightclick=-1",
+          "popupwindow=-1",
+          "iframe=-1",
+          "page_rank=-1"
+        ]
+      }
+    },
+    "figures": {
+      "lr_coefficients": "reports/figures/int_01_lr_coefficients.png",
+      "l2_path": "reports/figures/int_02_l2_path.png",
+      "rf_impurity": "reports/figures/int_03_rf_impurity.png",
+      "perm": "reports/figures/int_04_permutation_importance.png"
+    }
   }
 }

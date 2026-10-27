@@ -28,6 +28,7 @@ from src.evaluation import bootstrap_ci, compute_metrics, paired_bootstrap_diff,
 from src.logistic_regression import LogisticRegression
 from src.preprocessing import TARGET, FeatureEncoder, PreparedData, prepare, save_split
 from src.decision_tree import DecisionTree
+from src.interpretation import permutation_importance, rank_stability
 from src.random_forest import RandomForest
 from src.reference_models import (MajorityBaseline, SingleFeatureBaseline, sk_proba, sklearn_forest,
                                    sklearn_logistic, sklearn_tree)
@@ -758,8 +759,93 @@ def stage_overfit() -> dict[str, Any]:
     return out
 
 
+# ------------------------------------------------------------- stage: interpretation
+
+
+def stage_interpret() -> dict[str, Any]:
+    """Phase 9: coefficients, impurity and permutation importance, stability across seeds/folds."""
+    plotting.style()
+    sel = _selected()
+    data, enc = get_data()
+    lr_kind = sel["lr"]["encoding"]
+    lr_enc = enc[lr_kind]
+    raw, lrm = matrices(data, enc["raw"]), matrices(data, lr_enc)
+    ytr, yva = data.y("train"), data.y("val")
+    lr_model = LogisticRegression.load(MODELS_DIR / "logistic_regression.json")
+    rf_model = RandomForest.load(MODELS_DIR / "random_forest.json")
+    feats = data.features
+    rf_params = {k: sel["rf"][k] for k in ("max_depth", "min_samples_leaf", "max_features", "n_estimators")}
+
+    # 1. LR coefficients (log-odds change vs the reference level of each feature).
+    coefs = dict(zip(lr_enc.output_names, lr_model.w.tolist()))
+    figs = {"lr_coefficients": plotting.bar_h(
+        coefs, "Coefficient (log-odds of phishing vs reference level)",
+        f"Custom LR coefficients ({lr_kind}; reference = level 1 of each feature)", "int_01_lr_coefficients.png",
+        signed=True)}
+
+    # Regularisation path: how coefficients shrink as λ grows.
+    path_l2 = [0.0, 1e-4, 1e-3, 1e-2, 3e-2, 1e-1]
+    top_names = [n for n, _ in sorted(coefs.items(), key=lambda kv: -abs(kv[1]))[:6]]
+    path = {}
+    for lam in path_l2:
+        lr = 0.9 / LogisticRegression.smoothness_constant(lrm["train"][0], lam)
+        mdl = LogisticRegression(learning_rate=lr, l2=lam, n_iter=LR_MAX_ITER, tol=LR_TOL).fit(lrm["train"][0], ytr)
+        path[str(lam)] = {"weights": dict(zip(lr_enc.output_names, mdl.w.tolist())), "l2_norm": float(np.linalg.norm(mdl.w)),
+                          "iterations": mdl.n_iter_run}
+    xs = list(range(len(path_l2)))
+    figs["l2_path"] = plotting.line_panel(
+        {n: (xs, [path[str(l)]["weights"][n] for l in path_l2]) for n in top_names},
+        "L2 strength λ", "Coefficient", "Regularisation path of the six largest coefficients",
+        "int_02_l2_path.png", xticklabels=[f"{l:g}" for l in path_l2])
+
+    # 2. Impurity importance (RF) and permutation importance on VALIDATION (both models).
+    imp = dict(zip(feats, rf_model.feature_importances_.tolist()))
+    val_frame = data.part("val")
+    lr_pred = lambda df: lr_model.predict_proba(lr_enc.transform(df))  # noqa: E731
+    rf_pred = lambda df: rf_model.predict_proba(enc["raw"].transform(df))  # noqa: E731
+    perm_lr = permutation_importance(lr_pred, val_frame, yva, feats, n_repeats=10)
+    perm_rf = permutation_importance(rf_pred, val_frame, yva, feats, n_repeats=10)
+    figs["rf_impurity"] = plotting.bar_h(imp, "Mean decrease in Gini impurity (normalised)",
+                                         "Custom RF impurity importance (training data)", "int_03_rf_impurity.png")
+    figs["perm"] = plotting.grouped_bars(
+        list(perm_rf["feature"][:10]),
+        {"Custom RF": [float(perm_rf.set_index("feature").loc[f, "mean_auc_drop"]) for f in perm_rf["feature"][:10]],
+         "Custom LR": [float(perm_lr.set_index("feature").loc[f, "mean_auc_drop"]) for f in perm_rf["feature"][:10]]},
+        "int_04_permutation_importance.png", "Permutation importance on validation (top 10 for RF)",
+        "Mean ROC-AUC drop (10 shuffles)")
+
+    # 3. Stability: RF impurity importance across 5 seeds; LR coefficients across 5 CV folds.
+    seed_imps = np.array([RandomForest(seed=s, **rf_params).fit(raw["train"][0], ytr).feature_importances_
+                          for s in range(5)])
+    lr_params = {"learning_rate": sel["lr"]["learning_rate"], "l2": sel["lr"]["l2"], "n_iter": LR_MAX_ITER, "tol": LR_TOL}
+    fold_coefs = np.array([LogisticRegression(**lr_params).fit(lrm["train"][0][a], ytr[a]).w
+                           for a, _ in stratified_folds(ytr, 5)])
+    stability = {
+        "rf_impurity_across_seeds": {**rank_stability(seed_imps, feats),
+                                     "std_by_feature": dict(zip(feats, seed_imps.std(0).round(5).tolist()))},
+        "lr_coefficients_across_folds": {**rank_stability(np.abs(fold_coefs), lr_enc.output_names),
+                                         "mean": dict(zip(lr_enc.output_names, fold_coefs.mean(0).round(4).tolist())),
+                                         "std": dict(zip(lr_enc.output_names, fold_coefs.std(0, ddof=1).round(4).tolist())),
+                                         "sign_flips": [n for n, col in zip(lr_enc.output_names, fold_coefs.T)
+                                                        if (col > 0).any() and (col < 0).any()]},
+    }
+    # Rank agreement between the importance views.
+    rank = lambda s: s.rank(ascending=False)  # noqa: E731
+    views = pd.DataFrame({"rf_impurity": pd.Series(imp),
+                          "rf_permutation": perm_rf.set_index("feature")["mean_auc_drop"],
+                          "lr_permutation": perm_lr.set_index("feature")["mean_auc_drop"]})
+    agreement = views.apply(rank).corr(method="spearman").round(3).to_dict()
+
+    out = {"lr_coefficients": coefs, "lr_intercept": lr_model.b, "lr_l2_path": path,
+           "rf_impurity_importance": imp, "permutation_importance_val": {
+               "Custom LR": perm_lr.to_dict(orient="records"), "Custom RF": perm_rf.to_dict(orient="records")},
+           "importance_rank_agreement_spearman": agreement, "stability": stability, "figures": figs}
+    update_results("interpretation", out)
+    return out
+
+
 STAGES = {"prepare": stage_prepare, "baselines": stage_baselines, "lr": stage_lr, "tree": stage_tree,
-          "rf": stage_rf, "evaluate": stage_evaluate, "overfit": stage_overfit}
+          "rf": stage_rf, "evaluate": stage_evaluate, "overfit": stage_overfit, "interpret": stage_interpret}
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -853,6 +939,19 @@ def _print_summary(name: str, res: Any) -> None:
         for k, v in res["feature_selection_val"].items():
             print(f"  {k:<44} n={v['n_features']:>2}  LR auc {v['lr_val']['roc_auc']:.4f} f1 {v['lr_val']['f1']:.4f} "
                   f"({v['lr_fit_seconds']:.1f}s)  RF auc {v['rf_val']['roc_auc']:.4f} f1 {v['rf_val']['f1']:.4f} ({v['rf_fit_seconds']:.1f}s)")
+    elif name == "interpret":
+        c = sorted(res["lr_coefficients"].items(), key=lambda kv: -abs(kv[1]))
+        print("LR top coefs:", [(k, round(v, 3)) for k, v in c[:12]], "intercept", round(res["lr_intercept"], 3))
+        print("RF impurity top:", sorted(((k, round(v, 4)) for k, v in res["rf_impurity_importance"].items()), key=lambda kv: -kv[1])[:10])
+        for k, v in res["permutation_importance_val"].items():
+            print(k, "perm top:", [(r["feature"], round(r["mean_auc_drop"], 4), round(r["std"], 4)) for r in v[:8]])
+        print("rank agreement:", res["importance_rank_agreement_spearman"])
+        st = res["stability"]
+        print("RF seed stability:", round(st["rf_impurity_across_seeds"]["mean_pairwise_spearman"], 3),
+              "min", round(st["rf_impurity_across_seeds"]["min_pairwise_spearman"], 3))
+        print("LR fold stability:", round(st["lr_coefficients_across_folds"]["mean_pairwise_spearman"], 3),
+              "sign flips:", st["lr_coefficients_across_folds"]["sign_flips"])
+        print("L2 norms:", {k: round(v["l2_norm"], 2) for k, v in res["lr_l2_path"].items()})
     elif isinstance(res, dict):
         print(json.dumps(_round(res), indent=1, default=str)[:3000])
 
