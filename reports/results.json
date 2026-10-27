@@ -1,0 +1,99 @@
+{
+  "preprocessing": {
+    "cleaned_rows": 5721,
+    "partition_sizes": {
+      "seed": 42,
+      "train": 4004,
+      "val": 858,
+      "test": 859,
+      "stratified": true
+    },
+    "phishing_rate": {
+      "train": 0.5165,
+      "val": 0.5163,
+      "test": 0.5169
+    },
+    "encoded_dimensions": {
+      "raw": 30,
+      "onehot": 38
+    }
+  },
+  "baselines_val": {
+    "majority": {
+      "threshold": 0.5,
+      "accuracy": 0.5163,
+      "precision": 0.5163,
+      "recall": 1.0,
+      "f1": 0.681,
+      "macro_f1": 0.3405,
+      "specificity": 0.0,
+      "roc_auc": 0.5,
+      "pr_auc": 0.5163,
+      "log_loss": 0.6926,
+      "brier": 0.2497,
+      "tn": 0,
+      "fp": 415,
+      "fn": 0,
+      "tp": 443
+    },
+    "best_single_feature": {
+      "feature": "sslfinal_state",
+      "threshold": 0.5,
+      "accuracy": 0.8881,
+      "precision": 0.9141,
+      "recall": 0.8646,
+      "f1": 0.8886,
+      "macro_f1": 0.8881,
+      "specificity": 0.9133,
+      "roc_auc": 0.8976,
+      "pr_auc": 0.8771,
+      "log_loss": 0.3411,
+      "brier": 0.0979,
+      "tn": 379,
+      "fp": 36,
+      "fn": 60,
+      "tp": 383
+    },
+    "sklearn_lr_reference_raw": {
+      "threshold": 0.5,
+      "accuracy": 0.9301,
+      "precision": 0.9443,
+      "recall": 0.9187,
+      "f1": 0.9314,
+      "macro_f1": 0.93,
+      "specificity": 0.9422,
+      "roc_auc": 0.978,
+      "pr_auc": 0.9808,
+      "log_loss": 0.1917,
+      "brier": 0.0555,
+      "tn": 391,
+      "fp": 24,
+      "fn": 36,
+      "tp": 407,
+      "train_accuracy": 0.9371,
+      "n_inputs": 30,
+      "fit_seconds": 0.0375
+    },
+    "sklearn_lr_reference_onehot": {
+      "threshold": 0.5,
+      "accuracy": 0.9452,
+      "precision": 0.9521,
+      "recall": 0.9413,
+      "f1": 0.9467,
+      "macro_f1": 0.9452,
+      "specificity": 0.9494,
+      "roc_auc": 0.9882,
+      "pr_auc": 0.9895,
+      "log_loss": 0.139,
+      "brier": 0.0411,
+      "tn": 394,
+      "fp": 21,
+      "fn": 26,
+      "tp": 417,
+      "train_accuracy": 0.9515,
+      "n_inputs": 38,
+      "fit_seconds": 0.0262
+    },
+    "_note": "Validation partition, threshold 0.5. sklearn LR is an unpenalised REFERENCE model, not the custom implementation."
+  }
+}

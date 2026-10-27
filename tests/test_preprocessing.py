@@ -69,3 +69,39 @@ def test_single_feature_scores_use_train_only_and_handle_unseen():
     s = single_feature_scores(train, other, "f", alpha=0.0)
     assert s[0] == 1.0 and s[1] == 0.0
     assert s[2] == pytest.approx(0.5)  # unseen value -> training prior
+
+
+def _frame():
+    return pd.DataFrame({"x": [-1, 0, 1, 1], "z": [-1, 1, 1, -1], TARGET: [1, 1, 0, 0]})
+
+
+def test_raw_encoder_keeps_order_and_codes():
+    from src.preprocessing import FeatureEncoder
+
+    enc = FeatureEncoder("raw").fit(_frame())
+    X = enc.transform(_frame()[["z", "x"]])  # column order in input must not matter
+    assert enc.output_names == ["x", "z"]
+    assert X[:, 0].tolist() == [-1, 0, 1, 1]
+
+
+def test_onehot_encoder_uses_highest_level_as_reference():
+    from src.preprocessing import FeatureEncoder
+
+    enc = FeatureEncoder("onehot").fit(_frame())
+    assert enc.output_names == ["x=-1", "x=0", "z=-1"]
+    X = enc.transform(_frame())
+    assert X.tolist() == [[1, 0, 1], [0, 1, 0], [0, 0, 0], [0, 0, 1]]
+
+
+def test_encoder_rejects_invalid_and_missing_input_and_roundtrips():
+    from src.preprocessing import FeatureEncoder
+
+    enc = FeatureEncoder("onehot").fit(_frame())
+    with pytest.raises(ValueError, match="invalid value"):
+        enc.transform(pd.DataFrame({"x": [2], "z": [1]}))
+    with pytest.raises(ValueError, match="missing columns"):
+        enc.transform(pd.DataFrame({"x": [1]}))
+    with pytest.raises(ValueError, match="missing or non-numeric"):
+        enc.transform(pd.DataFrame({"x": [None], "z": [1]}))
+    enc2 = FeatureEncoder.from_dict(enc.to_dict())
+    assert np.array_equal(enc2.transform(_frame()), enc.transform(_frame()))

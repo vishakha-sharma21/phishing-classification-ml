@@ -1,0 +1,582 @@
+{
+  "label_mapping_original_to_project": {
+    "-1": 1,
+    "1": 0
+  },
+  "positive_class": "phishing (1)",
+  "feature_order": [
+    "having_ip_address",
+    "url_length",
+    "shortining_service",
+    "having_at_symbol",
+    "double_slash_redirecting",
+    "prefix_suffix",
+    "having_sub_domain",
+    "sslfinal_state",
+    "domain_registration_length",
+    "favicon",
+    "port",
+    "https_token",
+    "request_url",
+    "url_of_anchor",
+    "links_in_tags",
+    "sfh",
+    "submitting_to_email",
+    "abnormal_url",
+    "redirect",
+    "on_mouseover",
+    "rightclick",
+    "popupwindow",
+    "iframe",
+    "age_of_domain",
+    "dnsrecord",
+    "web_traffic",
+    "page_rank",
+    "google_index",
+    "links_pointing_to_page",
+    "statistical_report"
+  ],
+  "allowed_values": {
+    "having_ip_address": [
+      -1,
+      1
+    ],
+    "url_length": [
+      -1,
+      0,
+      1
+    ],
+    "shortining_service": [
+      -1,
+      1
+    ],
+    "having_at_symbol": [
+      -1,
+      1
+    ],
+    "double_slash_redirecting": [
+      -1,
+      1
+    ],
+    "prefix_suffix": [
+      -1,
+      1
+    ],
+    "having_sub_domain": [
+      -1,
+      0,
+      1
+    ],
+    "sslfinal_state": [
+      -1,
+      0,
+      1
+    ],
+    "domain_registration_length": [
+      -1,
+      1
+    ],
+    "favicon": [
+      -1,
+      1
+    ],
+    "port": [
+      -1,
+      1
+    ],
+    "https_token": [
+      -1,
+      1
+    ],
+    "request_url": [
+      -1,
+      1
+    ],
+    "url_of_anchor": [
+      -1,
+      0,
+      1
+    ],
+    "links_in_tags": [
+      -1,
+      0,
+      1
+    ],
+    "sfh": [
+      -1,
+      0,
+      1
+    ],
+    "submitting_to_email": [
+      -1,
+      1
+    ],
+    "abnormal_url": [
+      -1,
+      1
+    ],
+    "redirect": [
+      0,
+      1
+    ],
+    "on_mouseover": [
+      -1,
+      1
+    ],
+    "rightclick": [
+      -1,
+      1
+    ],
+    "popupwindow": [
+      -1,
+      1
+    ],
+    "iframe": [
+      -1,
+      1
+    ],
+    "age_of_domain": [
+      -1,
+      1
+    ],
+    "dnsrecord": [
+      -1,
+      1
+    ],
+    "web_traffic": [
+      -1,
+      0,
+      1
+    ],
+    "page_rank": [
+      -1,
+      1
+    ],
+    "google_index": [
+      -1,
+      1
+    ],
+    "links_pointing_to_page": [
+      -1,
+      0,
+      1
+    ],
+    "statistical_report": [
+      -1,
+      1
+    ]
+  },
+  "encoders": {
+    "raw": {
+      "kind": "raw",
+      "features": [
+        "having_ip_address",
+        "url_length",
+        "shortining_service",
+        "having_at_symbol",
+        "double_slash_redirecting",
+        "prefix_suffix",
+        "having_sub_domain",
+        "sslfinal_state",
+        "domain_registration_length",
+        "favicon",
+        "port",
+        "https_token",
+        "request_url",
+        "url_of_anchor",
+        "links_in_tags",
+        "sfh",
+        "submitting_to_email",
+        "abnormal_url",
+        "redirect",
+        "on_mouseover",
+        "rightclick",
+        "popupwindow",
+        "iframe",
+        "age_of_domain",
+        "dnsrecord",
+        "web_traffic",
+        "page_rank",
+        "google_index",
+        "links_pointing_to_page",
+        "statistical_report"
+      ],
+      "levels": {
+        "having_ip_address": [
+          -1,
+          1
+        ],
+        "url_length": [
+          -1,
+          0,
+          1
+        ],
+        "shortining_service": [
+          -1,
+          1
+        ],
+        "having_at_symbol": [
+          -1,
+          1
+        ],
+        "double_slash_redirecting": [
+          -1,
+          1
+        ],
+        "prefix_suffix": [
+          -1,
+          1
+        ],
+        "having_sub_domain": [
+          -1,
+          0,
+          1
+        ],
+        "sslfinal_state": [
+          -1,
+          0,
+          1
+        ],
+        "domain_registration_length": [
+          -1,
+          1
+        ],
+        "favicon": [
+          -1,
+          1
+        ],
+        "port": [
+          -1,
+          1
+        ],
+        "https_token": [
+          -1,
+          1
+        ],
+        "request_url": [
+          -1,
+          1
+        ],
+        "url_of_anchor": [
+          -1,
+          0,
+          1
+        ],
+        "links_in_tags": [
+          -1,
+          0,
+          1
+        ],
+        "sfh": [
+          -1,
+          0,
+          1
+        ],
+        "submitting_to_email": [
+          -1,
+          1
+        ],
+        "abnormal_url": [
+          -1,
+          1
+        ],
+        "redirect": [
+          0,
+          1
+        ],
+        "on_mouseover": [
+          -1,
+          1
+        ],
+        "rightclick": [
+          -1,
+          1
+        ],
+        "popupwindow": [
+          -1,
+          1
+        ],
+        "iframe": [
+          -1,
+          1
+        ],
+        "age_of_domain": [
+          -1,
+          1
+        ],
+        "dnsrecord": [
+          -1,
+          1
+        ],
+        "web_traffic": [
+          -1,
+          0,
+          1
+        ],
+        "page_rank": [
+          -1,
+          1
+        ],
+        "google_index": [
+          -1,
+          1
+        ],
+        "links_pointing_to_page": [
+          -1,
+          0,
+          1
+        ],
+        "statistical_report": [
+          -1,
+          1
+        ]
+      },
+      "output_names": [
+        "having_ip_address",
+        "url_length",
+        "shortining_service",
+        "having_at_symbol",
+        "double_slash_redirecting",
+        "prefix_suffix",
+        "having_sub_domain",
+        "sslfinal_state",
+        "domain_registration_length",
+        "favicon",
+        "port",
+        "https_token",
+        "request_url",
+        "url_of_anchor",
+        "links_in_tags",
+        "sfh",
+        "submitting_to_email",
+        "abnormal_url",
+        "redirect",
+        "on_mouseover",
+        "rightclick",
+        "popupwindow",
+        "iframe",
+        "age_of_domain",
+        "dnsrecord",
+        "web_traffic",
+        "page_rank",
+        "google_index",
+        "links_pointing_to_page",
+        "statistical_report"
+      ]
+    },
+    "onehot": {
+      "kind": "onehot",
+      "features": [
+        "having_ip_address",
+        "url_length",
+        "shortining_service",
+        "having_at_symbol",
+        "double_slash_redirecting",
+        "prefix_suffix",
+        "having_sub_domain",
+        "sslfinal_state",
+        "domain_registration_length",
+        "favicon",
+        "port",
+        "https_token",
+        "request_url",
+        "url_of_anchor",
+        "links_in_tags",
+        "sfh",
+        "submitting_to_email",
+        "abnormal_url",
+        "redirect",
+        "on_mouseover",
+        "rightclick",
+        "popupwindow",
+        "iframe",
+        "age_of_domain",
+        "dnsrecord",
+        "web_traffic",
+        "page_rank",
+        "google_index",
+        "links_pointing_to_page",
+        "statistical_report"
+      ],
+      "levels": {
+        "having_ip_address": [
+          -1,
+          1
+        ],
+        "url_length": [
+          -1,
+          0,
+          1
+        ],
+        "shortining_service": [
+          -1,
+          1
+        ],
+        "having_at_symbol": [
+          -1,
+          1
+        ],
+        "double_slash_redirecting": [
+          -1,
+          1
+        ],
+        "prefix_suffix": [
+          -1,
+          1
+        ],
+        "having_sub_domain": [
+          -1,
+          0,
+          1
+        ],
+        "sslfinal_state": [
+          -1,
+          0,
+          1
+        ],
+        "domain_registration_length": [
+          -1,
+          1
+        ],
+        "favicon": [
+          -1,
+          1
+        ],
+        "port": [
+          -1,
+          1
+        ],
+        "https_token": [
+          -1,
+          1
+        ],
+        "request_url": [
+          -1,
+          1
+        ],
+        "url_of_anchor": [
+          -1,
+          0,
+          1
+        ],
+        "links_in_tags": [
+          -1,
+          0,
+          1
+        ],
+        "sfh": [
+          -1,
+          0,
+          1
+        ],
+        "submitting_to_email": [
+          -1,
+          1
+        ],
+        "abnormal_url": [
+          -1,
+          1
+        ],
+        "redirect": [
+          0,
+          1
+        ],
+        "on_mouseover": [
+          -1,
+          1
+        ],
+        "rightclick": [
+          -1,
+          1
+        ],
+        "popupwindow": [
+          -1,
+          1
+        ],
+        "iframe": [
+          -1,
+          1
+        ],
+        "age_of_domain": [
+          -1,
+          1
+        ],
+        "dnsrecord": [
+          -1,
+          1
+        ],
+        "web_traffic": [
+          -1,
+          0,
+          1
+        ],
+        "page_rank": [
+          -1,
+          1
+        ],
+        "google_index": [
+          -1,
+          1
+        ],
+        "links_pointing_to_page": [
+          -1,
+          0,
+          1
+        ],
+        "statistical_report": [
+          -1,
+          1
+        ]
+      },
+      "output_names": [
+        "having_ip_address=-1",
+        "url_length=-1",
+        "url_length=0",
+        "shortining_service=-1",
+        "having_at_symbol=-1",
+        "double_slash_redirecting=-1",
+        "prefix_suffix=-1",
+        "having_sub_domain=-1",
+        "having_sub_domain=0",
+        "sslfinal_state=-1",
+        "sslfinal_state=0",
+        "domain_registration_length=-1",
+        "favicon=-1",
+        "port=-1",
+        "https_token=-1",
+        "request_url=-1",
+        "url_of_anchor=-1",
+        "url_of_anchor=0",
+        "links_in_tags=-1",
+        "links_in_tags=0",
+        "sfh=-1",
+        "sfh=0",
+        "submitting_to_email=-1",
+        "abnormal_url=-1",
+        "redirect=0",
+        "on_mouseover=-1",
+        "rightclick=-1",
+        "popupwindow=-1",
+        "iframe=-1",
+        "age_of_domain=-1",
+        "dnsrecord=-1",
+        "web_traffic=-1",
+        "web_traffic=0",
+        "page_rank=-1",
+        "google_index=-1",
+        "links_pointing_to_page=-1",
+        "links_pointing_to_page=0",
+        "statistical_report=-1"
+      ]
+    }
+  },
+  "cleaning_policy": "collapse exact duplicates; drop feature vectors seen with both labels; then split",
+  "split": {
+    "seed": 42,
+    "train": 4004,
+    "val": 858,
+    "test": 859,
+    "stratified": true
+  },
+  "scaling": "none (bounded discrete codes; one-hot indicators are already on a 0/1 scale)"
+}
