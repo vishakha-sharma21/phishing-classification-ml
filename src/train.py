@@ -25,7 +25,9 @@ from src import plotting
 from src.evaluation import compute_metrics
 from src.logistic_regression import LogisticRegression
 from src.preprocessing import TARGET, FeatureEncoder, PreparedData, prepare, save_split
-from src.reference_models import MajorityBaseline, SingleFeatureBaseline, sk_proba, sklearn_logistic
+from src.decision_tree import DecisionTree
+from src.reference_models import (MajorityBaseline, SingleFeatureBaseline, sk_proba, sklearn_forest,
+                                   sklearn_logistic, sklearn_tree)
 from src.threshold_tuning import threshold_curve, tune_threshold
 
 RESULTS_PATH = REPORTS_DIR / "results.json"
@@ -295,7 +297,73 @@ def stage_lr() -> dict[str, Any]:
     return out
 
 
-STAGES = {"prepare": stage_prepare, "baselines": stage_baselines, "lr": stage_lr}
+# ------------------------------------------------------------- stage: decision tree
+
+TREE_DEPTHS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, None]
+TREE_LEAVES = [1, 2, 5, 10, 20]
+
+
+def stage_tree() -> dict[str, Any]:
+    """Phase 5: single custom tree — depth / leaf-size study on VALIDATION, sklearn check."""
+    plotting.style()
+    data, enc = get_data()
+    m = matrices(data, enc["raw"])
+    (Xtr, ytr), (Xva, yva) = m["train"], m["val"]
+    grid = []
+    for d in TREE_DEPTHS:
+        for leaf in TREE_LEAVES:
+            t0 = time.perf_counter()
+            t = DecisionTree(max_depth=d, min_samples_leaf=leaf).fit(Xtr, ytr)
+            secs = time.perf_counter() - t0
+            mt, mv = compute_metrics(ytr, t.predict_proba(Xtr)), compute_metrics(yva, t.predict_proba(Xva))
+            grid.append({"max_depth": d, "min_samples_leaf": leaf, "fit_seconds": secs, "n_leaves": t.n_leaves,
+                         "depth": t.depth, "train_accuracy": mt["accuracy"], "train_roc_auc": mt["roc_auc"],
+                         "train_log_loss": mt["log_loss"], "val_accuracy": mv["accuracy"],
+                         "val_roc_auc": mv["roc_auc"], "val_log_loss": mv["log_loss"], "val_f1": mv["f1"]})
+    best = min(grid, key=lambda g: (round(g["val_log_loss"], 4), g["n_leaves"]))
+    params = {"max_depth": best["max_depth"], "min_samples_leaf": best["min_samples_leaf"]}
+    tree = DecisionTree(**params).fit(Xtr, ytr)
+    pv = tree.predict_proba(Xva)
+    thr = tune_threshold(yva, pv, "f1")
+
+    sk = sklearn_tree(params).fit(Xtr, ytr)
+    psk = sk_proba(sk, Xva)
+    unconstrained = next(g for g in grid if g["max_depth"] is None and g["min_samples_leaf"] == 1)
+
+    d_lbl = [str(d) if d is not None else "∞" for d in TREE_DEPTHS]
+    xs = list(range(len(TREE_DEPTHS)))
+    leaf1 = [g for g in grid if g["min_samples_leaf"] == 1]
+    leaf_best = [g for g in grid if g["min_samples_leaf"] == params["min_samples_leaf"]]
+    figs = {"depth_curve": plotting.line_panel(
+        {"train (leaf ≥ 1)": (xs, [g["train_log_loss"] for g in leaf1], "--", plotting.SERIES[0]),
+         "validation (leaf ≥ 1)": (xs, [g["val_log_loss"] for g in leaf1], "-", plotting.SERIES[0]),
+         f"train (leaf ≥ {params['min_samples_leaf']})": (xs, [g["train_log_loss"] for g in leaf_best], "--",
+                                                          plotting.SERIES[1]),
+         f"validation (leaf ≥ {params['min_samples_leaf']})": (xs, [g["val_log_loss"] for g in leaf_best], "-",
+                                                               plotting.SERIES[1])},
+        "max_depth (∞ = unlimited)", "Log-loss (clipped)", "Decision tree: depth vs train/validation loss",
+        "tree_01_depth_curve.png", xticklabels=d_lbl)}
+    out = {
+        "selected": {**params, "n_leaves": tree.n_leaves, "depth": tree.depth, "threshold": thr},
+        "val_metrics_at_threshold": compute_metrics(yva, pv, thr),
+        "train_metrics_at_threshold": compute_metrics(ytr, tree.predict_proba(Xtr), thr),
+        "unconstrained_tree": unconstrained,
+        "grid": grid,
+        "depth_labels": d_lbl,
+        "sklearn_reference": {
+            "n_leaves": int(sk.get_n_leaves()), "depth": int(sk.get_depth()),
+            "val_metrics_at_threshold": compute_metrics(yva, psk, thr),
+            "val_label_agreement": float(np.mean((psk >= thr) == (pv >= thr))),
+            "max_abs_val_proba_diff": float(np.max(np.abs(psk - pv))),
+        },
+        "top_of_tree": tree.export_text(data.features, max_depth=3),
+        "figures": figs,
+    }
+    update_results("decision_tree", out)
+    return out
+
+
+STAGES = {"prepare": stage_prepare, "baselines": stage_baselines, "lr": stage_lr, "tree": stage_tree}
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -331,6 +399,18 @@ def _print_summary(name: str, res: Any) -> None:
         print("reference check:", {k: v for k, v in res["reference_check"].items() if k != "sklearn_val_metrics"})
         print("fit s / peak MB / infer ms:", res["fit_seconds"], res["peak_fit_memory_mb"],
               res["inference_ms_per_858_rows"])
+    elif name == "tree":
+        print("selected:", res["selected"])
+        print("val @thr:", {k: round(v, 4) for k, v in res["val_metrics_at_threshold"].items()})
+        print("train @thr acc:", round(res["train_metrics_at_threshold"]["accuracy"], 4))
+        u = res["unconstrained_tree"]
+        print("unconstrained: leaves", u["n_leaves"], "depth", u["depth"], "train acc", round(u["train_accuracy"], 4),
+              "val acc", round(u["val_accuracy"], 4), "val auc", round(u["val_roc_auc"], 4))
+        g = pd.DataFrame(res["grid"])
+        g["max_depth"] = g["max_depth"].fillna(-1).astype(int)
+        print(g.pivot_table(index="max_depth", columns="min_samples_leaf", values="val_log_loss").round(4))
+        print("sklearn ref:", {k: v for k, v in res["sklearn_reference"].items() if k != "val_metrics_at_threshold"})
+        print(res["top_of_tree"])
     elif isinstance(res, dict):
         print(json.dumps(_round(res), indent=1, default=str)[:3000])
 

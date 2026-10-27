@@ -75,7 +75,8 @@ def confusion_grid(cms: dict[str, dict], name: str, title: str) -> str:
 
 
 def line_panel(series: dict[str, tuple], xlabel: str, ylabel: str, title: str, name: str,
-               logx: bool = False, logy: bool = False, ref: float | None = None) -> str:
+               logx: bool = False, logy: bool = False, ref: float | None = None,
+               xticklabels: list[str] | None = None) -> str:
     """Generic multi-series line chart. ``series`` maps label -> (x, y[, linestyle[, colour]])."""
     fig, ax = plt.subplots(figsize=(7, 4))
     for i, (label, s) in enumerate(series.items()):
@@ -91,6 +92,8 @@ def line_panel(series: dict[str, tuple], xlabel: str, ylabel: str, title: str, n
                       **({"linthresh": 1e-5} if min(min(s[0]) for s in series.values()) <= 0 else {}))
     if logy:
         ax.set_yscale("log")
+    if xticklabels is not None:
+        ax.set_xticks(range(len(xticklabels)), xticklabels)
     ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
     ax.legend(fontsize=8)
     fig.tight_layout()
