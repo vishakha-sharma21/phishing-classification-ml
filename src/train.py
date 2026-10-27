@@ -23,6 +23,7 @@ from src.config import LABEL_MAPPING, MODELS_DIR, PROCESSED_DIR, RANDOM_SEED, RE
 from src.data_loading import load_raw
 from src import plotting
 from src.cross_validation import cross_validate, paired_fold_difference, stratified_folds, summarise
+from src.feature_selection import dominant_level_share, mutual_information_ranking, near_constant_filter
 from src.evaluation import bootstrap_ci, compute_metrics, paired_bootstrap_diff, verdict
 from src.logistic_regression import LogisticRegression
 from src.preprocessing import TARGET, FeatureEncoder, PreparedData, prepare, save_split
@@ -632,8 +633,133 @@ def stage_evaluate() -> dict[str, Any]:
     return out
 
 
+# ------------------------------------------------------- stage: overfitting + feature selection
+
+
+def _subset_encoders(data: PreparedData, features: list[str]) -> dict[str, FeatureEncoder]:
+    """Encoders restricted to ``features`` (fitted on train)."""
+    train = data.part("train")[features + [TARGET]]
+    return {k: FeatureEncoder(k).fit(train) for k in ("raw", "onehot")}
+
+
+def stage_overfit() -> dict[str, Any]:
+    """Phase 8: learning curves, RF depth/leaf study, and feature selection (VALIDATION only)."""
+    plotting.style()
+    sel = _selected()
+    data, enc = get_data()
+    raw = matrices(data, enc["raw"])
+    lr_kind = sel["lr"]["encoding"]
+    lr_m = matrices(data, enc[lr_kind])
+    (Xtr, ytr), (Xva, yva) = raw["train"], raw["val"]
+    lr_params = {"learning_rate": sel["lr"]["learning_rate"], "l2": sel["lr"]["l2"], "n_iter": LR_MAX_ITER, "tol": LR_TOL}
+    rf_params = {k: sel["rf"][k] for k in ("max_depth", "min_samples_leaf", "max_features", "n_estimators")}
+    tree_params = {k: sel["tree"][k] for k in ("max_depth", "min_samples_leaf")}
+    rng = np.random.default_rng(RANDOM_SEED)
+
+    # 1. Learning curves over training-set size (stratified subsamples of train).
+    fracs = [0.1, 0.2, 0.4, 0.6, 0.8, 1.0]
+    lc: dict[str, dict[str, list]] = {k: {"n": [], "train_log_loss": [], "val_log_loss": [], "train_roc_auc": [],
+                                          "val_roc_auc": []} for k in ("Custom LR", "Custom RF", "Custom tree")}
+    pos, neg = np.flatnonzero(ytr == 1), np.flatnonzero(ytr == 0)
+    for fr in fracs:
+        sub = np.sort(np.r_[rng.permutation(pos)[: int(fr * len(pos))], rng.permutation(neg)[: int(fr * len(neg))]])
+        fits = {
+            "Custom LR": (LogisticRegression(**lr_params).fit(lr_m["train"][0][sub], ytr[sub]), lr_m),
+            "Custom RF": (RandomForest(seed=RANDOM_SEED, **rf_params).fit(Xtr[sub], ytr[sub]), raw),
+            "Custom tree": (DecisionTree(**tree_params).fit(Xtr[sub], ytr[sub]), raw),
+        }
+        for k, (model, mats) in fits.items():
+            mt = compute_metrics(ytr[sub], model.predict_proba(mats["train"][0][sub]))
+            mv = compute_metrics(yva, model.predict_proba(mats["val"][0]))
+            lc[k]["n"].append(int(len(sub)))
+            for part, mm in (("train", mt), ("val", mv)):
+                lc[k][f"{part}_log_loss"].append(mm["log_loss"])
+                lc[k][f"{part}_roc_auc"].append(mm["roc_auc"])
+    figs = {"learning_curves": plotting.line_panel(
+        {f"{k} – {part}": (v["n"], v[f"{part}_roc_auc"], "--" if part == "train" else "-", plotting.SERIES[i])
+         for i, (k, v) in enumerate(lc.items()) for part in ("train", "val")},
+        "Training rows used", "ROC-AUC", "Learning curves: train vs validation ROC-AUC", "ovf_01_learning_curves.png")}
+
+    # 2. Random-forest depth study (other selected settings fixed) and tree leaf-size study.
+    rf_depth = {}
+    for d in (2, 4, 6, 8, 12, 15, None):
+        rf = RandomForest(seed=RANDOM_SEED, **{**rf_params, "max_depth": d}).fit(Xtr, ytr)
+        rf_depth[str(d)] = {"train_log_loss": compute_metrics(ytr, rf.predict_proba(Xtr))["log_loss"],
+                            "val_log_loss": compute_metrics(yva, rf.predict_proba(Xva))["log_loss"],
+                            "train_accuracy": compute_metrics(ytr, rf.predict_proba(Xtr))["accuracy"],
+                            "val_accuracy": compute_metrics(yva, rf.predict_proba(Xva))["accuracy"]}
+    tree_grid = load_results()["decision_tree"]["grid"]
+    tree_leaf = {str(g["min_samples_leaf"]): {k: g[k] for k in ("train_log_loss", "val_log_loss", "n_leaves")}
+                 for g in tree_grid if g["max_depth"] is None}
+    xs = list(range(len(rf_depth)))
+    unl = [g for g in tree_grid if g["min_samples_leaf"] == 1]
+    tree_by_depth = {str(g["max_depth"]): g for g in unl}
+    figs["rf_vs_tree_depth"] = plotting.line_panel(
+        {"RF – train": (xs, [v["train_log_loss"] for v in rf_depth.values()], "--", plotting.SERIES[1]),
+         "RF – validation": (xs, [v["val_log_loss"] for v in rf_depth.values()], "-", plotting.SERIES[1]),
+         "single tree – train": (xs, [tree_by_depth[k]["train_log_loss"] for k in rf_depth], "--", plotting.SERIES[0]),
+         "single tree – validation": (xs, [tree_by_depth[k]["val_log_loss"] for k in rf_depth], "-", plotting.SERIES[0])},
+        "max_depth (None = unlimited)", "Log-loss (clipped, log scale)",
+        "Depth: single tree overfits, forest does not", "ovf_02_depth_tree_vs_rf.png",
+        logy=True, xticklabels=list(rf_depth))
+
+    # 3. Feature selection (train-only), evaluated on validation.
+    feats = data.features
+    share = dominant_level_share(data.part("train"), feats)
+    mi = mutual_information_ranking(data.part("train"), feats, TARGET)
+
+    def evaluate_subset(fs: list[str]) -> dict[str, Any]:
+        e = _subset_encoders(data, fs)
+        r, o = matrices(data, e["raw"]), matrices(data, e[lr_kind])
+        t0 = time.perf_counter()
+        lr = LogisticRegression(**lr_params).fit(o["train"][0], ytr)
+        lr_s = time.perf_counter() - t0
+        rf = RandomForest(seed=RANDOM_SEED, **{**rf_params, "max_features": min(rf_params["max_features"], len(fs))
+                                               if isinstance(rf_params["max_features"], int) else rf_params["max_features"]}
+                          ).fit(r["train"][0], ytr)
+        plr, prf = lr.predict_proba(o["val"][0]), rf.predict_proba(r["val"][0])
+        return {"n_features": len(fs), "features": fs,
+                "lr_val": compute_metrics(yva, plr, tune_threshold(yva, plr)), "lr_fit_seconds": lr_s,
+                "rf_val": compute_metrics(yva, prf, tune_threshold(yva, prf)), "rf_fit_seconds": rf.fit_seconds_}
+
+    fs_results: dict[str, Any] = {"all_features": evaluate_subset(feats)}
+    for tau in (0.95, 0.90, 0.85):
+        kept = near_constant_filter(data.part("train"), feats, tau)
+        fs_results[f"near_constant_tau_{tau}"] = evaluate_subset(kept)
+    for k in (3, 5, 8, 10, 15, 20):
+        fs_results[f"mi_top_{k}"] = evaluate_subset(list(mi.index[:k]))
+    html_cluster = ["favicon", "port", "popupwindow", "on_mouseover", "iframe", "submitting_to_email", "rightclick"]
+    ablations = {"drop_prefix_suffix": ["prefix_suffix"], "drop_sslfinal_state": ["sslfinal_state"],
+                 "drop_top2_sslfinal_url_of_anchor": ["sslfinal_state", "url_of_anchor"],
+                 "drop_html_js_cluster": html_cluster,
+                 "drop_domain_registration_length": ["domain_registration_length"]}
+    for name, drop in ablations.items():
+        fs_results[f"ablation_{name}"] = evaluate_subset([f for f in feats if f not in drop])
+
+    ks = [3, 5, 8, 10, 15, 20, 30]
+    rows = [fs_results[f"mi_top_{k}"] for k in ks[:-1]] + [fs_results["all_features"]]
+    figs["mi_top_k"] = plotting.line_panel(
+        {"Custom LR": (ks, [r["lr_val"]["roc_auc"] for r in rows]),
+         "Custom RF": (ks, [r["rf_val"]["roc_auc"] for r in rows])},
+        "Top-k features by training mutual information", "Validation ROC-AUC",
+        "Feature selection: validation ROC-AUC vs number of features", "ovf_03_mi_top_k.png")
+    figs["ablation"] = plotting.bar_h(
+        {name.replace("ablation_", ""): fs_results[name]["rf_val"]["roc_auc"] - fs_results["all_features"]["rf_val"]["roc_auc"]
+         for name in fs_results if name.startswith("ablation_") or name.startswith("near_constant")},
+        "Change in RF validation ROC-AUC vs all 30 features", "Ablations and filters (Random Forest, validation)",
+        "ovf_04_ablation_rf.png", signed=True)
+
+    out = {"learning_curves": lc, "rf_depth_study": rf_depth, "tree_min_leaf_study_unlimited_depth": tree_leaf,
+           "dominant_level_share_train": share.round(4).to_dict(),
+           "raw_variance_train": data.part("train")[feats].var().round(4).to_dict(),
+           "mutual_information_bits_train": mi.round(4).to_dict(),
+           "feature_selection_val": fs_results, "figures": figs}
+    update_results("overfitting_feature_selection", out)
+    return out
+
+
 STAGES = {"prepare": stage_prepare, "baselines": stage_baselines, "lr": stage_lr, "tree": stage_tree,
-          "rf": stage_rf, "evaluate": stage_evaluate}
+          "rf": stage_rf, "evaluate": stage_evaluate, "overfit": stage_overfit}
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -718,6 +844,15 @@ def _print_summary(name: str, res: Any) -> None:
         dd = res["duplicate_diagnostic"]
         print("\nDuplicate diagnostic (acc / f1 / auc):", {k: (round(v["accuracy"], 4), round(v["f1"], 4), round(v["roc_auc"], 4))
                                                          for k, v in dd.items() if isinstance(v, dict)})
+    elif name == "overfit":
+        for k, v in res["learning_curves"].items():
+            print(k, "n:", v["n"], "train auc:", [round(x, 4) for x in v["train_roc_auc"]],
+                  "val auc:", [round(x, 4) for x in v["val_roc_auc"]])
+        print("RF depth:", {k: (round(v["train_log_loss"], 4), round(v["val_log_loss"], 4)) for k, v in res["rf_depth_study"].items()})
+        print("MI top:", list(res["mutual_information_bits_train"].items())[:6])
+        for k, v in res["feature_selection_val"].items():
+            print(f"  {k:<44} n={v['n_features']:>2}  LR auc {v['lr_val']['roc_auc']:.4f} f1 {v['lr_val']['f1']:.4f} "
+                  f"({v['lr_fit_seconds']:.1f}s)  RF auc {v['rf_val']['roc_auc']:.4f} f1 {v['rf_val']['f1']:.4f} ({v['rf_fit_seconds']:.1f}s)")
     elif isinstance(res, dict):
         print(json.dumps(_round(res), indent=1, default=str)[:3000])
 
