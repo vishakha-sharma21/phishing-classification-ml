@@ -27,6 +27,13 @@ scikit-learn), because they can enable useful splits deeper down (e.g. XOR).
 in a random order; constant features are skipped without counting; search stops once
 ``max_features`` non-constant features have been evaluated *and* a valid split exists.
 
+Fast path for low-cardinality data: when every feature has at most ``MAX_CODES_FAST``
+distinct values (true for the phishing codes), each value is mapped once to a small
+integer code and a single ``bincount`` per node yields the class counts of every
+(feature, value) pair at once. The candidate thresholds, Gini values, feature-subset
+rule and tie-breaking are identical to the general per-feature path (a unit test checks
+that both paths grow identical trees); only the bookkeeping is vectorised.
+
 The tree is grown with an explicit stack rather than Python recursion, so deep trees
 cannot hit the interpreter's recursion limit. It is stored as flat arrays.
 """
@@ -40,6 +47,7 @@ from typing import Any
 import numpy as np
 
 LEAF = -1
+MAX_CODES_FAST = 16  # use the vectorised split search when all features have <= this many values
 
 
 def gini(counts: np.ndarray) -> np.ndarray:
@@ -144,6 +152,49 @@ class DecisionTree:
                 best = cand
         return best
 
+    def _best_split_fast(self, y: np.ndarray, idx: np.ndarray,
+                         rng: np.random.Generator) -> tuple[int, float, float] | None:
+        """Vectorised equivalent of ``_best_split`` using precomputed integer codes."""
+        n, F, K = len(idx), self.n_features, self._n_codes
+        if K < 2:
+            return None  # every feature is constant in the whole training set
+        key = self._code_offsets + self._codes[idx] * 2 + y[idx][:, None]
+        cnt = np.bincount(key.ravel(), minlength=F * K * 2).reshape(F, K, 2)
+        present = cnt.sum(axis=2) > 0                       # (F, K) value occurs in node
+        nonconst = present.sum(axis=1) >= 2
+        left = np.cumsum(cnt, axis=1)[:, :-1, :]           # boundary j: codes <= j go left
+        right = cnt.sum(axis=1, keepdims=True) - left
+        nl, nr = left.sum(axis=2), right.sum(axis=2)
+        valid = (nl >= self.min_samples_leaf) & (nr >= self.min_samples_leaf)
+        w = (nl * gini(left) + nr * gini(right)) / n
+        w[~valid] = np.inf
+        jbest = np.argmin(w, axis=1)                        # first minimum -> smallest threshold
+        wbest = w[np.arange(F), jbest]
+
+        if self._k_features == F:
+            cand = np.flatnonzero(nonconst)
+        else:
+            cand_list, evaluated, found = [], 0, False
+            for f in rng.permutation(F):                    # same RNG use as the general path
+                if evaluated >= self._k_features and found:
+                    break
+                if not nonconst[f]:
+                    continue
+                evaluated += 1
+                cand_list.append(f)
+                found = found or np.isfinite(wbest[f])
+            cand = np.array(sorted(cand_list), dtype=int)
+        cand = cand[np.isfinite(wbest[cand])] if len(cand) else cand
+        if len(cand) == 0:
+            return None
+        m = wbest[cand].min()
+        f = int(cand[np.flatnonzero(wbest[cand] <= m + 1e-12)[0]])  # lowest feature index on ties
+        j = int(jbest[f])
+        lev = np.flatnonzero(present[f])
+        lo, hi = lev[lev <= j].max(), lev[lev > j].min()
+        u = self._code_values[f]
+        return f, float((u[lo] + u[hi]) / 2), float(wbest[f])
+
     # ------------------------------------------------------------------ training
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "DecisionTree":
@@ -160,6 +211,13 @@ class DecisionTree:
         self.n_features = X.shape[1]
         self._k_features = resolve_max_features(self.max_features, self.n_features)
         rng = self.seed if isinstance(self.seed, np.random.Generator) else np.random.default_rng(self.seed)
+        uniques = [np.unique(X[:, f]) for f in range(self.n_features)]
+        self._fast = max(len(u) for u in uniques) <= MAX_CODES_FAST
+        if self._fast:
+            self._n_codes = max(len(u) for u in uniques)
+            self._code_values = uniques
+            self._codes = np.column_stack([np.searchsorted(u, X[:, f]) for f, u in enumerate(uniques)])
+            self._code_offsets = (np.arange(self.n_features) * self._n_codes * 2)[None, :]
         max_depth = np.inf if self.max_depth is None else self.max_depth
         n_root = len(y)
 
@@ -181,7 +239,7 @@ class DecisionTree:
             if (impurity[node] <= 0.0 or depth >= max_depth or n < self.min_samples_split
                     or n < 2 * self.min_samples_leaf):
                 continue
-            split = self._best_split(X, y, idx, rng)
+            split = self._best_split_fast(y, idx, rng) if self._fast else self._best_split(X, y, idx, rng)
             if split is None:
                 continue
             f, t, w_child = split
@@ -207,6 +265,8 @@ class DecisionTree:
         self.impurity_ = np.array(impurity, dtype=float)
         self.node_depth_ = np.array(depth_arr, dtype=int)
         self.raw_importance_ = importance
+        for attr in ("_codes", "_code_values", "_code_offsets"):  # training-only buffers
+            self.__dict__.pop(attr, None)
         return self
 
     # ------------------------------------------------------------------ inference

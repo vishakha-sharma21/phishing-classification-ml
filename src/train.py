@@ -26,6 +26,7 @@ from src.evaluation import compute_metrics
 from src.logistic_regression import LogisticRegression
 from src.preprocessing import TARGET, FeatureEncoder, PreparedData, prepare, save_split
 from src.decision_tree import DecisionTree
+from src.random_forest import RandomForest
 from src.reference_models import (MajorityBaseline, SingleFeatureBaseline, sk_proba, sklearn_forest,
                                    sklearn_logistic, sklearn_tree)
 from src.threshold_tuning import threshold_curve, tune_threshold
@@ -363,7 +364,122 @@ def stage_tree() -> dict[str, Any]:
     return out
 
 
-STAGES = {"prepare": stage_prepare, "baselines": stage_baselines, "lr": stage_lr, "tree": stage_tree}
+# ------------------------------------------------------------- stage: random forest
+
+RF_GRID = {"max_depth": [None, 12, 8], "min_samples_leaf": [1, 2, 5], "max_features": ["sqrt", 10, 15]}
+RF_TREES = 100
+
+
+def stage_rf() -> dict[str, Any]:
+    """Phase 6: tune the custom forest on VALIDATION, study trees / features / bootstrap, save it."""
+    plotting.style()
+    data, enc = get_data()
+    m = matrices(data, enc["raw"])
+    (Xtr, ytr), (Xva, yva) = m["train"], m["val"]
+
+    grid = []
+    for d in RF_GRID["max_depth"]:
+        for leaf in RF_GRID["min_samples_leaf"]:
+            for mf in RF_GRID["max_features"]:
+                rf = RandomForest(n_estimators=RF_TREES, max_depth=d, min_samples_leaf=leaf, max_features=mf,
+                                  seed=RANDOM_SEED).fit(Xtr, ytr)
+                mt, mv = compute_metrics(ytr, rf.predict_proba(Xtr)), compute_metrics(yva, rf.predict_proba(Xva))
+                grid.append({"max_depth": d, "min_samples_leaf": leaf, "max_features": mf,
+                             "fit_seconds": rf.fit_seconds_, "train_log_loss": mt["log_loss"],
+                             "train_accuracy": mt["accuracy"], "val_log_loss": mv["log_loss"],
+                             "val_roc_auc": mv["roc_auc"], "val_f1_at_0.5": mv["f1"], "val_accuracy": mv["accuracy"]})
+    best = min(grid, key=lambda g: round(g["val_log_loss"], 4))
+    params = {k: best[k] for k in ("max_depth", "min_samples_leaf", "max_features")}
+
+    # Final forest: trained on train only, with OOB tracking; memory and time measured.
+    tracemalloc.start()
+    forest = RandomForest(n_estimators=RF_TREES, oob_score=True, seed=RANDOM_SEED, **params).fit(Xtr, ytr)
+    peak_mb = tracemalloc.get_traced_memory()[1] / 2**20
+    tracemalloc.stop()
+    pv = forest.predict_proba(Xva)
+    thr = tune_threshold(yva, pv, "f1")
+    t0 = time.perf_counter()
+    for _ in range(5):
+        forest.predict_proba(Xva)
+    infer_ms = (time.perf_counter() - t0) / 5 * 1000
+
+    # Number of trees: running averages of a 300-tree forest (same params).
+    big = RandomForest(n_estimators=300, oob_score=False, seed=RANDOM_SEED, **params).fit(Xtr, ytr)
+    st_va, st_tr = big.staged_proba(Xva), big.staged_proba(Xtr)
+    T = [1, 2, 5, 10, 25, 50, 100, 150, 200, 300]
+    trees_curve = {"n_trees": T,
+                   "train_log_loss": [compute_metrics(ytr, st_tr[t - 1])["log_loss"] for t in T],
+                   "val_log_loss": [compute_metrics(yva, st_va[t - 1])["log_loss"] for t in T],
+                   "val_roc_auc": [compute_metrics(yva, st_va[t - 1])["roc_auc"] for t in T],
+                   "val_f1_at_0.5": [compute_metrics(yva, st_va[t - 1])["f1"] for t in T]}
+
+    # Candidate features per split (others fixed), and bootstrap vs none.
+    mf_study = {}
+    for mf in (1, 2, 3, 5, 10, 15, 20, 30):
+        rf = RandomForest(n_estimators=RF_TREES, seed=RANDOM_SEED, **{**params, "max_features": mf}).fit(Xtr, ytr)
+        per_tree = np.array([t.predict_proba(Xva) for t in rf.trees])
+        corr = np.corrcoef(per_tree)
+        mf_study[str(mf)] = {"val_log_loss": compute_metrics(yva, per_tree.mean(0))["log_loss"],
+                             "val_roc_auc": compute_metrics(yva, per_tree.mean(0))["roc_auc"],
+                             "mean_tree_val_roc_auc": float(np.mean([compute_metrics(yva, p)["roc_auc"]
+                                                                     for p in per_tree])),
+                             "mean_pairwise_tree_correlation": float(corr[np.triu_indices_from(corr, 1)].mean()),
+                             "fit_seconds": rf.fit_seconds_}
+    nob = RandomForest(n_estimators=RF_TREES, bootstrap=False, seed=RANDOM_SEED, **params).fit(Xtr, ytr)
+    bootstrap_study = {"bootstrap": compute_metrics(yva, pv, 0.5),
+                       "no_bootstrap": compute_metrics(yva, nob.predict_proba(Xva), 0.5)}
+
+    # Independent scikit-learn REFERENCE forest with the same hyperparameters.
+    t0 = time.perf_counter()
+    skf = sklearn_forest({"n_estimators": RF_TREES, **params}).fit(Xtr, ytr)
+    sk_fit = time.perf_counter() - t0
+    psk = sk_proba(skf, Xva)
+    reference = {"val_metrics_at_threshold": compute_metrics(yva, psk, thr), "fit_seconds": sk_fit,
+                 "val_proba_correlation": float(np.corrcoef(psk, pv)[0, 1]),
+                 "val_label_agreement_at_threshold": float(np.mean((psk >= thr) == (pv >= thr)))}
+
+    path = MODELS_DIR / "random_forest.json"
+    forest.save(path, extra={"encoding": "raw", "input_names": enc["raw"].output_names, "threshold": thr,
+                             "threshold_rule": "maximise validation F1",
+                             "selected_by": "minimum validation log-loss",
+                             "trained_on": "train partition (4,004 rows)"})
+
+    figs = {
+        "n_trees": plotting.line_panel(
+            {"train": (T, trees_curve["train_log_loss"], "--", plotting.SERIES[0]),
+             "validation": (T, trees_curve["val_log_loss"], "-", plotting.SERIES[0])},
+            "Number of trees (log scale)", "Log-loss (clipped)", "Random forest: effect of the number of trees",
+            "rf_01_n_trees.png", logx=True, logy=True),
+        "max_features": plotting.line_panel(
+            {"forest validation ROC-AUC": (list(range(8)), [v["val_roc_auc"] for v in mf_study.values()]),
+             "mean single-tree validation ROC-AUC": (list(range(8)),
+                                                     [v["mean_tree_val_roc_auc"] for v in mf_study.values()]),
+             "mean pairwise tree correlation": (list(range(8)),
+                                                [v["mean_pairwise_tree_correlation"] for v in mf_study.values()])},
+            "max_features (candidate features per split)", "Value",
+            "Feature subsampling: diversity vs strength", "rf_02_max_features.png", xticklabels=list(mf_study)),
+        "threshold": plotting.threshold_plot(threshold_curve(yva, pv), thr, "rf_03_threshold.png",
+                                             "Custom RF: validation precision / recall / F1 vs threshold"),
+    }
+    ok = ~np.isnan(forest.oob_proba_)
+    out = {
+        "selected": {**params, "n_estimators": RF_TREES, "threshold": thr},
+        "val_metrics_at_threshold": compute_metrics(yva, pv, thr),
+        "train_metrics_at_threshold": compute_metrics(ytr, forest.predict_proba(Xtr), thr),
+        "oob_metrics_at_threshold": compute_metrics(ytr[ok], forest.oob_proba_[ok], thr),
+        "fit_seconds": forest.fit_seconds_, "peak_fit_memory_mb": peak_mb,
+        "inference_ms_per_858_rows": infer_ms, "model_file_mb": path.stat().st_size / 2**20,
+        "mean_leaves_per_tree": float(np.mean([t.n_leaves for t in forest.trees])),
+        "mean_depth_per_tree": float(np.mean([t.depth for t in forest.trees])),
+        "grid": grid, "n_trees_curve": trees_curve, "max_features_study": mf_study,
+        "bootstrap_study": bootstrap_study, "reference_check": reference, "figures": figs,
+    }
+    update_results("random_forest", out)
+    return out
+
+
+STAGES = {"prepare": stage_prepare, "baselines": stage_baselines, "lr": stage_lr, "tree": stage_tree,
+          "rf": stage_rf}
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -411,6 +527,24 @@ def _print_summary(name: str, res: Any) -> None:
         print(g.pivot_table(index="max_depth", columns="min_samples_leaf", values="val_log_loss").round(4))
         print("sklearn ref:", {k: v for k, v in res["sklearn_reference"].items() if k != "val_metrics_at_threshold"})
         print(res["top_of_tree"])
+    elif name == "rf":
+        print("selected:", res["selected"])
+        for k in ("val_metrics_at_threshold", "train_metrics_at_threshold", "oob_metrics_at_threshold"):
+            print(k, {m: round(res[k][m], 4) for m in ("accuracy", "precision", "recall", "f1", "roc_auc", "log_loss")})
+        g = pd.DataFrame(res["grid"]); g["max_depth"] = g["max_depth"].fillna(-1).astype(int)
+        g["max_features"] = g["max_features"].astype(str)
+        print(g.pivot_table(index=["max_depth", "min_samples_leaf"], columns="max_features", values="val_log_loss").round(4))
+        print("n_trees:", dict(zip(res["n_trees_curve"]["n_trees"], [round(v, 4) for v in res["n_trees_curve"]["val_log_loss"]])))
+        print("max_features:", {k: (round(v["val_roc_auc"], 4), round(v["mean_tree_val_roc_auc"], 4),
+                                    round(v["mean_pairwise_tree_correlation"], 3)) for k, v in res["max_features_study"].items()})
+        print("bootstrap vs none (val auc/f1):", {k: (round(v["roc_auc"], 4), round(v["f1"], 4)) for k, v in res["bootstrap_study"].items()})
+        r = res["reference_check"]
+        print("sklearn ref:", {m: round(r["val_metrics_at_threshold"][m], 4) for m in ("f1", "roc_auc", "log_loss")},
+              "corr", round(r["val_proba_correlation"], 4), "agree", round(r["val_label_agreement_at_threshold"], 4),
+              "fit s", round(r["fit_seconds"], 2))
+        print("fit s / peak MB / infer ms / file MB / leaves / depth:", round(res["fit_seconds"], 2),
+              round(res["peak_fit_memory_mb"], 1), round(res["inference_ms_per_858_rows"], 1),
+              round(res["model_file_mb"], 2), res["mean_leaves_per_tree"], res["mean_depth_per_tree"])
     elif isinstance(res, dict):
         print(json.dumps(_round(res), indent=1, default=str)[:3000])
 

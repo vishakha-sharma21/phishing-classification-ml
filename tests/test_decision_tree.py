@@ -167,3 +167,21 @@ def test_invalid_input_rejected():
     with pytest.raises(ValueError):
         resolve_max_features(1.5, 10)
     assert resolve_max_features("sqrt", 30) == 5 and resolve_max_features(None, 30) == 30
+
+
+@pytest.mark.parametrize("params", [{}, {"max_depth": 5, "min_samples_leaf": 3}, {"max_features": "sqrt"},
+                                    {"max_features": 2, "min_samples_leaf": 4}])
+def test_fast_path_grows_identical_tree_to_general_path(params, monkeypatch):
+    import src.decision_tree as dt
+
+    rng = np.random.default_rng(8)
+    X = rng.integers(-1, 2, size=(600, 12)).astype(float)
+    X[:, 3] = rng.integers(0, 2, 600)          # a {0,1} feature
+    X[rng.random(600) < 0.3, 5] = -1           # a feature with an often-missing middle level
+    y = ((X[:, 0] - X[:, 1] + 0.5 * X[:, 5] + rng.normal(0, 1, 600)) > 0).astype(int)
+    fast = DecisionTree(seed=13, **params).fit(X, y)
+    monkeypatch.setattr(dt, "MAX_CODES_FAST", 0)
+    slow = DecisionTree(seed=13, **params).fit(X, y)
+    assert not slow._fast and fast._fast
+    for a in ("feature_", "threshold_", "left_", "right_", "value_", "n_samples_"):
+        np.testing.assert_array_equal(getattr(fast, a), getattr(slow, a))
