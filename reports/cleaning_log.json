@@ -1,0 +1,443 @@
+{
+  "generated_at_utc": "2026-10-27T16:38:29+00:00",
+  "source": {
+    "dataset": "UCI Phishing Websites (id=327)",
+    "doi": "10.24432/C51W2X",
+    "license": "CC BY 4.0",
+    "file": "data\\raw\\phishing.csv",
+    "sha256": "35dd9aa6870643c292d68343d926869095292a7406d198305cae7435069b59c2"
+  },
+  "shape": [
+    11055,
+    31
+  ],
+  "target_column": "result",
+  "target_values_observed": [
+    -1,
+    1
+  ],
+  "label_mapping_original_to_project": {
+    "-1": 1,
+    "1": 0
+  },
+  "label_mapping_meaning": {
+    "1": "phishing (positive)",
+    "0": "legitimate"
+  },
+  "missing_values": 0,
+  "values_outside_expected_set": {},
+  "columns_coded_zero_one": [
+    "redirect"
+  ],
+  "duplicate_audit": {
+    "original_rows": 11055,
+    "exact_duplicate_rows_beyond_first": 5206,
+    "unique_rows_features_plus_label": 5849,
+    "unique_feature_vectors": 5785,
+    "feature_vectors_appearing_more_than_once": 2614,
+    "largest_feature_vector_group_size": 25,
+    "conflicting_feature_vector_groups": 64,
+    "raw_rows_in_conflicting_groups": 357,
+    "unique_rows_in_conflicting_groups": 128,
+    "conflict_label_counts_per_group": [
+      {
+        "-1": 4,
+        "1": 5
+      },
+      {
+        "-1": 5,
+        "1": 4
+      },
+      {
+        "-1": 5,
+        "1": 4
+      },
+      {
+        "-1": 4,
+        "1": 3
+      },
+      {
+        "-1": 2,
+        "1": 6
+      },
+      {
+        "-1": 5,
+        "1": 2
+      },
+      {
+        "-1": 4,
+        "1": 4
+      },
+      {
+        "-1": 4,
+        "1": 6
+      },
+      {
+        "-1": 2,
+        "1": 4
+      },
+      {
+        "-1": 1,
+        "1": 6
+      },
+      {
+        "-1": 1,
+        "1": 5
+      },
+      {
+        "-1": 4,
+        "1": 8
+      },
+      {
+        "-1": 4,
+        "1": 4
+      },
+      {
+        "-1": 3,
+        "1": 3
+      },
+      {
+        "-1": 3,
+        "1": 1
+      },
+      {
+        "-1": 4,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 4
+      },
+      {
+        "-1": 2,
+        "1": 7
+      },
+      {
+        "-1": 4,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 4
+      },
+      {
+        "-1": 2,
+        "1": 6
+      },
+      {
+        "-1": 1,
+        "1": 5
+      },
+      {
+        "-1": 2,
+        "1": 4
+      },
+      {
+        "-1": 2,
+        "1": 11
+      },
+      {
+        "-1": 1,
+        "1": 5
+      },
+      {
+        "-1": 2,
+        "1": 5
+      },
+      {
+        "-1": 3,
+        "1": 8
+      },
+      {
+        "-1": 1,
+        "1": 6
+      },
+      {
+        "-1": 3,
+        "1": 1
+      },
+      {
+        "-1": 1,
+        "1": 4
+      },
+      {
+        "-1": 1,
+        "1": 1
+      },
+      {
+        "-1": 2,
+        "1": 2
+      },
+      {
+        "-1": 2,
+        "1": 2
+      },
+      {
+        "-1": 2,
+        "1": 1
+      },
+      {
+        "-1": 1,
+        "1": 1
+      },
+      {
+        "-1": 4,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 3
+      },
+      {
+        "-1": 2,
+        "1": 5
+      },
+      {
+        "-1": 1,
+        "1": 1
+      },
+      {
+        "-1": 3,
+        "1": 1
+      },
+      {
+        "-1": 3,
+        "1": 4
+      },
+      {
+        "-1": 1,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 3
+      },
+      {
+        "-1": 2,
+        "1": 2
+      },
+      {
+        "-1": 4,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 1
+      },
+      {
+        "-1": 1,
+        "1": 2
+      },
+      {
+        "-1": 2,
+        "1": 1
+      },
+      {
+        "-1": 2,
+        "1": 1
+      },
+      {
+        "-1": 1,
+        "1": 1
+      },
+      {
+        "-1": 5,
+        "1": 5
+      },
+      {
+        "-1": 1,
+        "1": 2
+      },
+      {
+        "-1": 2,
+        "1": 1
+      },
+      {
+        "-1": 1,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 1
+      },
+      {
+        "-1": 1,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 9
+      },
+      {
+        "-1": 1,
+        "1": 2
+      },
+      {
+        "-1": 5,
+        "1": 1
+      },
+      {
+        "-1": 5,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 2
+      },
+      {
+        "-1": 1,
+        "1": 2
+      }
+    ],
+    "retained_rows_after_policy": 5721,
+    "class_counts_original": {
+      "-1": {
+        "count": 4898,
+        "percent": 44.31
+      },
+      "1": {
+        "count": 6157,
+        "percent": 55.69
+      }
+    },
+    "class_counts_after_exact_dedup": {
+      "-1": {
+        "count": 3019,
+        "percent": 51.62
+      },
+      "1": {
+        "count": 2830,
+        "percent": 48.38
+      }
+    },
+    "class_counts_after_policy": {
+      "-1": {
+        "count": 2955,
+        "percent": 51.65
+      },
+      "1": {
+        "count": 2766,
+        "percent": 48.35
+      }
+    }
+  },
+  "policy": {
+    "exact_duplicates": "collapse to a single row (dataset treated as a set of unique feature vectors)",
+    "conflicting_groups": "exclude every row of a feature vector observed with both labels; no label is chosen arbitrarily",
+    "order": "deduplicate before train/validation/test splitting",
+    "status": "APPROVED by user (Phase 1 review)"
+  },
+  "target_like_columns": [],
+  "features_with_rule_agreement_ge_0.85": [
+    "sslfinal_state"
+  ],
+  "direction_check": [
+    {
+      "feature": "having_ip_address",
+      "anomaly": "domain part is an IP address",
+      "value_counts": {
+        "-1": 3793,
+        "1": 7262
+      },
+      "rare_code": -1,
+      "label_-1_rate_when_rare": 0.5078,
+      "label_-1_rate_otherwise": 0.4093
+    },
+    {
+      "feature": "having_at_symbol",
+      "anomaly": "URL contains '@'",
+      "value_counts": {
+        "-1": 1655,
+        "1": 9400
+      },
+      "rare_code": -1,
+      "label_-1_rate_when_rare": 0.5057,
+      "label_-1_rate_otherwise": 0.432
+    },
+    {
+      "feature": "shortining_service",
+      "anomaly": "URL uses a shortening service",
+      "value_counts": {
+        "-1": 1444,
+        "1": 9611
+      },
+      "rare_code": -1,
+      "label_-1_rate_when_rare": 0.356,
+      "label_-1_rate_otherwise": 0.4561
+    },
+    {
+      "feature": "double_slash_redirecting",
+      "anomaly": "'//' appears after the protocol",
+      "value_counts": {
+        "-1": 1429,
+        "1": 9626
+      },
+      "rare_code": -1,
+      "label_-1_rate_when_rare": 0.3933,
+      "label_-1_rate_otherwise": 0.4504
+    },
+    {
+      "feature": "port",
+      "anomaly": "non-preferred port status",
+      "value_counts": {
+        "-1": 1502,
+        "1": 9553
+      },
+      "rare_code": -1,
+      "label_-1_rate_when_rare": 0.4887,
+      "label_-1_rate_otherwise": 0.4359
+    },
+    {
+      "feature": "submitting_to_email",
+      "anomaly": "form submits via mail()/mailto:",
+      "value_counts": {
+        "-1": 2014,
+        "1": 9041
+      },
+      "rare_code": -1,
+      "label_-1_rate_when_rare": 0.4623,
+      "label_-1_rate_otherwise": 0.4388
+    },
+    {
+      "feature": "on_mouseover",
+      "anomaly": "onMouseOver changes the status bar",
+      "value_counts": {
+        "-1": 1315,
+        "1": 9740
+      },
+      "rare_code": -1,
+      "label_-1_rate_when_rare": 0.4996,
+      "label_-1_rate_otherwise": 0.4354
+    },
+    {
+      "feature": "rightclick",
+      "anomaly": "right-click is disabled",
+      "value_counts": {
+        "-1": 476,
+        "1": 10579
+      },
+      "rare_code": -1,
+      "label_-1_rate_when_rare": 0.4727,
+      "label_-1_rate_otherwise": 0.4417
+    },
+    {
+      "feature": "iframe",
+      "anomaly": "uses invisible iframe",
+      "value_counts": {
+        "-1": 1012,
+        "1": 10043
+      },
+      "rare_code": -1,
+      "label_-1_rate_when_rare": 0.4377,
+      "label_-1_rate_otherwise": 0.4436
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+# Dataset (download with `python -m src.data_loading`; see reports/dataset_inspection.md)
+data/raw/
+data/processed/
+
+# Environments and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Secrets
+.env
+*.key
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
