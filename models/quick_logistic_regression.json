@@ -1,0 +1,137 @@
+{
+ "model": "LogisticRegression (custom, NumPy)",
+ "params": {
+  "learning_rate": 0.5272,
+  "n_iter": 30000,
+  "l2": 0.0001,
+  "batch_size": null,
+  "class_weight": null,
+  "tol": 1e-09,
+  "seed": 42
+ },
+ "weights": [
+  3.3641653017026165,
+  5.331697775241483,
+  5.919568550692701,
+  1.2989219885833971,
+  4.887144567370642,
+  1.4159419600227767,
+  1.478272820137285,
+  0.15377804180469734,
+  1.570076937627401,
+  1.602276773168291,
+  -0.011566418326393397,
+  1.0650216252840876,
+  -0.4765012968617441,
+  0.8441337705712457
+ ],
+ "bias": -11.282284155666058,
+ "n_iter_run": 23325,
+ "converged": true,
+ "features": [
+  "sslfinal_state",
+  "url_of_anchor",
+  "prefix_suffix",
+  "having_sub_domain",
+  "web_traffic",
+  "sfh",
+  "links_in_tags",
+  "request_url"
+ ],
+ "selection": "top 8 by mutual information on the training partition",
+ "zone_rule": "low = largest threshold with validation phishing recall \u2265 98% (\u2264 2% of phishing sites called Safe); high = smallest threshold with validation precision \u2265 98% (\u2265 98% of 'Likely phishing' sites are phishing). Safe: p < low; Suspicious: low \u2264 p < high; Likely phishing: p \u2265 high.",
+ "trained_on": "train partition (4,004 rows)",
+ "encoder": {
+  "kind": "onehot",
+  "features": [
+   "sslfinal_state",
+   "url_of_anchor",
+   "prefix_suffix",
+   "having_sub_domain",
+   "web_traffic",
+   "sfh",
+   "links_in_tags",
+   "request_url"
+  ],
+  "levels": {
+   "sslfinal_state": [
+    -1,
+    0,
+    1
+   ],
+   "url_of_anchor": [
+    -1,
+    0,
+    1
+   ],
+   "prefix_suffix": [
+    -1,
+    1
+   ],
+   "having_sub_domain": [
+    -1,
+    0,
+    1
+   ],
+   "web_traffic": [
+    -1,
+    0,
+    1
+   ],
+   "sfh": [
+    -1,
+    0,
+    1
+   ],
+   "links_in_tags": [
+    -1,
+    0,
+    1
+   ],
+   "request_url": [
+    -1,
+    1
+   ]
+  },
+  "output_names": [
+   "sslfinal_state=-1",
+   "sslfinal_state=0",
+   "url_of_anchor=-1",
+   "url_of_anchor=0",
+   "prefix_suffix=-1",
+   "having_sub_domain=-1",
+   "having_sub_domain=0",
+   "web_traffic=-1",
+   "web_traffic=0",
+   "sfh=-1",
+   "sfh=0",
+   "links_in_tags=-1",
+   "links_in_tags=0",
+   "request_url=-1"
+  ]
+ },
+ "encoding": "onehot",
+ "threshold": 0.28,
+ "zones": {
+  "low": 0.17,
+  "high": 0.92,
+  "target": 0.98
+ },
+ "contribution_mean": [
+  0.36363636363636365,
+  0.12162837162837163,
+  0.3489010989010989,
+  0.4498001998001998,
+  0.8783716283716284,
+  0.28596403596403597,
+  0.35239760239760237,
+  0.25124875124875123,
+  0.2624875124875125,
+  0.7382617382617382,
+  0.0939060939060939,
+  0.3786213786213786,
+  0.3806193806193806,
+  0.44655344655344653
+ ],
+ "baseline_logit": 0.689111930360859
+}

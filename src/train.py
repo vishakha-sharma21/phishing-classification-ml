@@ -32,7 +32,7 @@ from src.interpretation import permutation_importance, rank_stability
 from src.random_forest import RandomForest
 from src.reference_models import (MajorityBaseline, SingleFeatureBaseline, sk_proba, sklearn_forest,
                                    sklearn_logistic, sklearn_tree)
-from src.threshold_tuning import threshold_curve, tune_threshold
+from src.threshold_tuning import assign_zone, threshold_curve, tune_threshold, zone_table, zone_thresholds
 
 RESULTS_PATH = REPORTS_DIR / "results.json"
 
@@ -844,8 +844,144 @@ def stage_interpret() -> dict[str, Any]:
     return out
 
 
+# ------------------------------------------------------------- stage: quick (8-input) models
+
+QUICK_K = 8
+QUICK_ZONE_TARGET = 0.98
+QUICK_RF_GRID = {"max_depth": [None, 8, 5], "min_samples_leaf": [1, 2, 5, 10], "max_features": ["sqrt", 4, 8]}
+
+
+def stage_quick() -> dict[str, Any]:
+    """App models on the top-8 training-MI features: tuned on VALIDATION, tested once.
+
+    Saves models/quick_logistic_regression.json and models/quick_random_forest.json, each
+    with its feature list, encoder, F1 threshold and the two three-zone thresholds.
+    """
+    full = _selected()
+    data, enc_full = get_data()
+    train = data.part("train")
+    ytr, yva, yte = data.y("train"), data.y("val"), data.y("test")
+
+    # 1. Feature choice: mutual information on the TRAINING partition only.
+    mi = mutual_information_ranking(train, data.features, TARGET)
+    feats = list(mi.index[:QUICK_K])
+    earlier = load_results().get("overfitting_feature_selection", {}).get("feature_selection_val", {})
+    earlier = earlier.get(f"mi_top_{QUICK_K}", {}).get("features")
+    if earlier is not None and earlier != feats:
+        raise RuntimeError(f"top-{QUICK_K} differs from the overfit stage: {feats} vs {earlier}")
+    enc = _subset_encoders(data, feats)
+
+    # 2. Logistic regression: encoding x L2 x learning rate, selected by validation log-loss.
+    mats = {k: matrices(data, e) for k, e in enc.items()}
+    lr_grid = []
+    for kind in LR_GRID["encoding"]:
+        Xtr, Xva = mats[kind]["train"][0], mats[kind]["val"][0]
+        L = LogisticRegression.smoothness_constant(Xtr)
+        for l2 in LR_GRID["l2"]:
+            for frac in LR_GRID["lr_times_L"]:
+                lr = round(frac / L, 4)
+                m = LogisticRegression(learning_rate=lr, l2=l2, n_iter=LR_MAX_ITER, tol=LR_TOL).fit(Xtr, ytr)
+                lr_grid.append({"encoding": kind, "l2": l2, "learning_rate": lr, "iterations": m.n_iter_run,
+                                "converged": m.converged,
+                                "val_log_loss": compute_metrics(yva, m.predict_proba(Xva))["log_loss"]})
+    b = min(lr_grid, key=lambda g: (round(g["val_log_loss"], 4), -g["l2"], g["learning_rate"]))
+    lr_kind = b["encoding"]
+    (Xtr_lr, _), (Xva_lr, _), (Xte_lr, _) = (mats[lr_kind][p] for p in ("train", "val", "test"))
+    lr_model = LogisticRegression(learning_rate=b["learning_rate"], l2=b["l2"], n_iter=LR_MAX_ITER,
+                                  tol=LR_TOL).fit(Xtr_lr, ytr)
+
+    # 3. Random forest: depth x leaf size x candidate features, selected by validation log-loss.
+    (Xtr_rf, _), (Xva_rf, _), (Xte_rf, _) = (mats["raw"][p] for p in ("train", "val", "test"))
+    rf_grid = []
+    for d in QUICK_RF_GRID["max_depth"]:
+        for leaf in QUICK_RF_GRID["min_samples_leaf"]:
+            for mf in QUICK_RF_GRID["max_features"]:
+                rf = RandomForest(n_estimators=RF_TREES, max_depth=d, min_samples_leaf=leaf, max_features=mf,
+                                  seed=RANDOM_SEED).fit(Xtr_rf, ytr)
+                rf_grid.append({"max_depth": d, "min_samples_leaf": leaf, "max_features": mf,
+                                "fit_seconds": rf.fit_seconds_,
+                                "val_log_loss": compute_metrics(yva, rf.predict_proba(Xva_rf))["log_loss"]})
+    rb = min(rf_grid, key=lambda g: (round(g["val_log_loss"], 4), -g["min_samples_leaf"]))
+    rf_params = {k: rb[k] for k in ("max_depth", "min_samples_leaf", "max_features")}
+    rf_model = RandomForest(n_estimators=RF_TREES, seed=RANDOM_SEED, **rf_params).fit(Xtr_rf, ytr)
+
+    # 4. Thresholds from VALIDATION only: binary (max F1) and the two zone cut-offs.
+    pv = {"lr": lr_model.predict_proba(Xva_lr), "rf": rf_model.predict_proba(Xva_rf)}
+    thr = {k: tune_threshold(yva, p, "f1") for k, p in pv.items()}
+    zones = {k: zone_thresholds(yva, p, QUICK_ZONE_TARGET) for k, p in pv.items()}
+    zone_rule = (f"low = largest threshold with validation phishing recall ≥ {QUICK_ZONE_TARGET:.0%} "
+                 f"(≤ {1 - QUICK_ZONE_TARGET:.0%} of phishing sites called Safe); high = smallest threshold with "
+                 f"validation precision ≥ {QUICK_ZONE_TARGET:.0%} (≥ {QUICK_ZONE_TARGET:.0%} of 'Likely phishing' "
+                 "sites are phishing). Safe: p < low; Suspicious: low ≤ p < high; Likely phishing: p ≥ high.")
+
+    # LR contributions are w_j * (x_j - mean_train_j), summed per feature; they add up to
+    # logit(p) - baseline_logit, where the baseline is the logit of an "average" training site.
+    x_mean = Xtr_lr.mean(axis=0)
+    common = {"features": feats, "selection": f"top {QUICK_K} by mutual information on the training partition",
+              "zone_rule": zone_rule, "trained_on": f"train partition ({len(ytr):,} rows)"}
+    lr_model.save(MODELS_DIR / "quick_logistic_regression.json", extra={
+        **common, "encoder": enc[lr_kind].to_dict(), "encoding": lr_kind, "threshold": thr["lr"],
+        "zones": zones["lr"], "contribution_mean": x_mean.tolist(),
+        "baseline_logit": float(lr_model.b + lr_model.w @ x_mean)})
+    rf_model.save(MODELS_DIR / "quick_random_forest.json", extra={
+        **common, "encoder": enc["raw"].to_dict(), "encoding": "raw", "threshold": thr["rf"], "zones": zones["rf"]})
+
+    # 5. ONE test evaluation, side by side with the saved 30-feature models.
+    full_lr = LogisticRegression.load(MODELS_DIR / "logistic_regression.json")
+    full_rf = RandomForest.load(MODELS_DIR / "random_forest.json")
+    full_lr_X = matrices(data, enc_full[full["lr"]["encoding"]])
+    full_raw = matrices(data, enc_full["raw"])
+    probas = {
+        "Quick LR (8)": (lr_model.predict_proba(Xte_lr), thr["lr"]),
+        "Quick RF (8)": (rf_model.predict_proba(Xte_rf), thr["rf"]),
+        "Full LR (30)": (full_lr.predict_proba(full_lr_X["test"][0]), full["lr"]["threshold"]),
+        "Full RF (30)": (full_rf.predict_proba(full_raw["test"][0]), full["rf"]["threshold"]),
+    }
+    val_probas = {
+        "Quick LR (8)": (pv["lr"], thr["lr"]), "Quick RF (8)": (pv["rf"], thr["rf"]),
+        "Full LR (30)": (full_lr.predict_proba(full_lr_X["val"][0]), full["lr"]["threshold"]),
+        "Full RF (30)": (full_rf.predict_proba(full_raw["val"][0]), full["rf"]["threshold"]),
+    }
+    test = {k: compute_metrics(yte, p, t) for k, (p, t) in probas.items()}
+    ci = {k: bootstrap_ci(yte, p, t, n_boot=1000) for k, (p, t) in probas.items()}
+
+    def pair(a: str, b_: str) -> dict[str, Any]:
+        d = paired_bootstrap_diff(yte, probas[a][0], probas[a][1], probas[b_][0], probas[b_][1], n_boot=1000)
+        return {m: {**v, "verdict": verdict(v)} for m, v in d.items()}
+
+    comparisons = {"Quick RF (8) vs Full RF (30)": pair("Quick RF (8)", "Full RF (30)"),
+                   "Quick LR (8) vs Full LR (30)": pair("Quick LR (8)", "Full LR (30)"),
+                   "Quick RF (8) vs Quick LR (8)": pair("Quick RF (8)", "Quick LR (8)")}
+
+    zone_of = lambda p, z: assign_zone(p, z["low"], z["high"])  # noqa: E731
+    pt_lr, pt_rf = probas["Quick LR (8)"][0], probas["Quick RF (8)"][0]
+    zone_results = {
+        "rule": zone_rule,
+        "thresholds": zones,
+        "val": {"Quick RF (8)": zone_table(yva, pv["rf"], **{k: zones["rf"][k] for k in ("low", "high")}),
+                "Quick LR (8)": zone_table(yva, pv["lr"], **{k: zones["lr"][k] for k in ("low", "high")})},
+        "test": {"Quick RF (8)": zone_table(yte, pt_rf, **{k: zones["rf"][k] for k in ("low", "high")}),
+                 "Quick LR (8)": zone_table(yte, pt_lr, **{k: zones["lr"][k] for k in ("low", "high")})},
+        "test_zone_agreement_lr_rf": float(np.mean(zone_of(pt_lr, zones["lr"]) == zone_of(pt_rf, zones["rf"]))),
+        "test_binary_agreement_lr_rf": float(np.mean((pt_lr >= thr["lr"]) == (pt_rf >= thr["rf"]))),
+    }
+    out = {
+        "features": feats, "mutual_information_bits_train": mi.round(4).to_dict(),
+        "lr_selected": {"encoding": lr_kind, "l2": b["l2"], "learning_rate": b["learning_rate"],
+                        "iterations": lr_model.n_iter_run, "converged": lr_model.converged,
+                        "n_inputs": int(Xtr_lr.shape[1]), "threshold": thr["lr"]},
+        "rf_selected": {**rf_params, "n_estimators": RF_TREES, "threshold": thr["rf"]},
+        "lr_grid": lr_grid, "rf_grid": rf_grid,
+        "val": {k: compute_metrics(yva, p, t) for k, (p, t) in val_probas.items()},
+        "test": test, "test_bootstrap_ci": ci, "paired_comparisons_test": comparisons, "zones": zone_results,
+    }
+    update_results("quick_models", out)
+    return out
+
+
 STAGES = {"prepare": stage_prepare, "baselines": stage_baselines, "lr": stage_lr, "tree": stage_tree,
-          "rf": stage_rf, "evaluate": stage_evaluate, "overfit": stage_overfit, "interpret": stage_interpret}
+          "rf": stage_rf, "evaluate": stage_evaluate, "overfit": stage_overfit, "interpret": stage_interpret,
+          "quick": stage_quick}
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -952,6 +1088,28 @@ def _print_summary(name: str, res: Any) -> None:
         print("LR fold stability:", round(st["lr_coefficients_across_folds"]["mean_pairwise_spearman"], 3),
               "sign flips:", st["lr_coefficients_across_folds"]["sign_flips"])
         print("L2 norms:", {k: round(v["l2_norm"], 2) for k, v in res["lr_l2_path"].items()})
+    elif name == "quick":
+        print("features:", res["features"])
+        print("LR:", res["lr_selected"])
+        print("RF:", res["rf_selected"])
+        cols = ["threshold", "accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"]
+        print("VAL:")
+        print(pd.DataFrame(res["val"]).T[cols].astype(float).round(4).to_string())
+        print("TEST:")
+        print(pd.DataFrame(res["test"]).T[cols].astype(float).round(4).to_string())
+        for k, v in res["test_bootstrap_ci"].items():
+            print(f"  {k:<14} F1 {v['f1']['point']:.3f} [{v['f1']['low']:.3f}, {v['f1']['high']:.3f}]  "
+                  f"AUC {v['roc_auc']['point']:.3f} [{v['roc_auc']['low']:.3f}, {v['roc_auc']['high']:.3f}]")
+        for k, v in res["paired_comparisons_test"].items():
+            print(f"  {k}: " + "; ".join(f"{m} {d['mean']:+.4f} [{d['low']:+.4f}, {d['high']:+.4f}] {d['verdict']}"
+                                         for m, d in v.items() if m in ("f1", "roc_auc")))
+        z = res["zones"]
+        print("zone thresholds:", z["thresholds"])
+        for part in ("val", "test"):
+            for model, t in z[part].items():
+                print(f"  {part} {model}:", {n: (r["rows"], round(r["phishing_rate"], 3)) for n, r in t.items()})
+        print("test agreement zone / binary:", round(z["test_zone_agreement_lr_rf"], 3),
+              round(z["test_binary_agreement_lr_rf"], 3))
     elif isinstance(res, dict):
         print(json.dumps(_round(res), indent=1, default=str)[:3000])
 

@@ -135,7 +135,7 @@ def bar_h(values: dict[str, float], xlabel: str, title: str, name: str, err: dic
 def grouped_bars(groups: list[str], series: dict[str, list[float]], name: str, title: str, ylabel: str,
                  errors: dict[str, list[tuple[float, float]]] | None = None, ylim: tuple | None = None) -> str:
     """Grouped vertical bars (one group per metric/class, one bar per model) with optional CIs."""
-    fig, ax = plt.subplots(figsize=(max(7, 1.3 * len(groups) * max(1, len(series)) / 2), 4.2))
+    fig, ax = plt.subplots(figsize=(min(11, max(7, 1.2 * len(groups))), 4.4))
     k = len(series)
     width = 0.8 / k
     x = np.arange(len(groups))
@@ -151,7 +151,8 @@ def grouped_bars(groups: list[str], series: dict[str, list[float]], name: str, t
     ax.grid(axis="x", visible=False)
     if ylim:
         ax.set_ylim(*ylim)
-    ax.set(ylabel=ylabel, title=title)
-    ax.legend(fontsize=8, ncol=min(k, 4), loc="lower right")
+    ax.set_ylabel(ylabel)
+    ax.set_title(title, pad=28)
+    ax.legend(fontsize=8, ncol=k, loc="lower center", bbox_to_anchor=(0.5, 1.0))
     fig.tight_layout()
     return save(fig, name)

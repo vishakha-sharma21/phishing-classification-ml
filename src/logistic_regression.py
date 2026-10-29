@@ -184,7 +184,7 @@ class LogisticRegression:
         Xb = np.c_[np.asarray(X, dtype=float), np.ones(len(X))]
         return float(0.25 * np.linalg.eigvalsh(Xb.T @ Xb / len(X))[-1] + l2)
 
-    # ------------------------------------------------------------- inference
+    #  inference
 
     def decision_function(self, X: np.ndarray) -> np.ndarray:
         """Logits z = Xw + b."""
@@ -202,7 +202,7 @@ class LogisticRegression:
             raise ValueError("threshold must be in [0, 1]")
         return (self.predict_proba(X) >= threshold).astype(int)
 
-    # ------------------------------------------------------------- persistence
+    #  persistence
 
     def to_dict(self) -> dict[str, Any]:
         if self.w is None:

@@ -212,3 +212,69 @@ FEATURES: dict[str, dict] = {
         "values": {-1: "listed", 1: "not listed"},
     },
 }
+
+
+# Plain-English questions for the 8-input "quick" models used by the app. ``options`` maps each
+# dataset code to the answer shown in the dropdown; ``reasons`` is the phrase used in
+# "Main reason: ..." when that answer is the largest contribution to the Logistic Regression score.
+QUICK_QUESTIONS: dict[str, dict] = {
+    "sslfinal_state": {
+        "question": "Does the site use HTTPS with a trusted certificate?",
+        "options": {1: "Yes — trusted issuer, certificate at least 1 year old",
+                    0: "HTTPS, but the certificate issuer is not trusted",
+                    -1: "No HTTPS, or the certificate is invalid"},
+        "reasons": {1: "the site has a valid HTTPS certificate from a trusted issuer",
+                    0: "the site's HTTPS certificate comes from an untrusted issuer",
+                    -1: "the site has no valid HTTPS certificate"},
+    },
+    "url_of_anchor": {
+        "question": "How many of the page's links go to other websites or nowhere ('#')?",
+        "options": {1: "Few (under 31%)", 0: "Some (31–67%)", -1: "Most (over 67%)"},
+        "reasons": {1: "most links on the page lead to the site itself",
+                    0: "a fair share of the page's links lead elsewhere or nowhere",
+                    -1: "most links on the page lead to other websites or nowhere"},
+    },
+    "prefix_suffix": {
+        "question": "Does the domain name contain a dash (-)?",
+        "options": {-1: "Yes (e.g. secure-paypal.com)", 1: "No"},
+        "reasons": {-1: "the domain name contains a dash",
+                    1: "the domain name has no dash"},
+    },
+    "having_sub_domain": {
+        "question": "How many sub-domains does the web address have?",
+        "options": {1: "None (e.g. example.com)", 0: "One (e.g. mail.example.com)",
+                    -1: "Two or more (e.g. login.secure.example.com)"},
+        "reasons": {1: "the web address has no extra sub-domains",
+                    0: "the web address has one extra sub-domain",
+                    -1: "the web address has several sub-domains"},
+    },
+    "web_traffic": {
+        "question": "How popular is the site (traffic rank)?",
+        "options": {1: "Popular — in the top 100,000 sites", 0: "Less popular — ranked below 100,000",
+                    -1: "Not ranked at all"},
+        "reasons": {1: "the site is popular (top-100,000 traffic rank)",
+                    0: "the site has a low traffic rank",
+                    -1: "the site has no recorded traffic"},
+    },
+    "sfh": {
+        "question": "Where do the page's forms send their data?",
+        "options": {1: "To the same website", 0: "To a different website",
+                    -1: "Nowhere — the form action is empty or 'about:blank'"},
+        "reasons": {1: "the page's forms send data to the site itself",
+                    0: "the page's forms send data to a different website",
+                    -1: "the page's forms have an empty or blank destination"},
+    },
+    "links_in_tags": {
+        "question": "How many links in the page's <meta>, <script> and <link> tags go to other websites?",
+        "options": {1: "Few (under 17%)", 0: "Some (17–81%)", -1: "Most (over 81%)"},
+        "reasons": {1: "the page's scripts and style links mostly come from the site itself",
+                    0: "some of the page's scripts and style links come from other websites",
+                    -1: "most of the page's scripts and style links come from other websites"},
+    },
+    "request_url": {
+        "question": "How many images and other embedded objects load from other websites?",
+        "options": {1: "Few (under 22%)", -1: "Many (22% or more)"},
+        "reasons": {1: "the page's images and media mostly load from the site itself",
+                    -1: "many of the page's images and media load from other websites"},
+    },
+}

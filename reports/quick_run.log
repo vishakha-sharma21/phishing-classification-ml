@@ -1,0 +1,31 @@
+
+=== stage: quick ===
+features: ['sslfinal_state', 'url_of_anchor', 'prefix_suffix', 'having_sub_domain', 'web_traffic', 'sfh', 'links_in_tags', 'request_url']
+LR: {'encoding': 'onehot', 'l2': 0.0001, 'learning_rate': 0.5272, 'iterations': 23325, 'converged': True, 'n_inputs': 14, 'threshold': 0.28}
+RF: {'max_depth': 8, 'min_samples_leaf': 1, 'max_features': 4, 'n_estimators': 100, 'threshold': 0.39}
+VAL:
+              threshold  accuracy  precision  recall      f1  roc_auc  pr_auc
+Quick LR (8)       0.28    0.9441     0.9284  0.9661  0.9469   0.9846  0.9854
+Quick RF (8)       0.39    0.9452     0.9342  0.9616  0.9477   0.9848  0.9860
+Full LR (30)       0.35    0.9510     0.9426  0.9639  0.9531   0.9881  0.9895
+Full RF (30)       0.46    0.9662     0.9705  0.9639  0.9672   0.9930  0.9931
+TEST:
+              threshold  accuracy  precision  recall      f1  roc_auc  pr_auc
+Quick LR (8)       0.28    0.9267     0.8960  0.9707  0.9319   0.9870  0.9884
+Quick RF (8)       0.39    0.9383     0.9222  0.9617  0.9416   0.9902  0.9911
+Full LR (30)       0.35    0.9336     0.9179  0.9572  0.9372   0.9875  0.9892
+Full RF (30)       0.46    0.9627     0.9640  0.9640  0.9640   0.9931  0.9939
+  Quick LR (8)   F1 0.932 [0.914, 0.948]  AUC 0.987 [0.982, 0.991]
+  Quick RF (8)   F1 0.942 [0.924, 0.957]  AUC 0.990 [0.986, 0.994]
+  Full LR (30)   F1 0.937 [0.920, 0.952]  AUC 0.988 [0.983, 0.992]
+  Full RF (30)   F1 0.964 [0.952, 0.976]  AUC 0.993 [0.989, 0.996]
+  Quick RF (8) vs Full RF (30): f1 -0.0229 [-0.0357, -0.0113] worse performance; roc_auc -0.0030 [-0.0062, -0.0001] worse performance
+  Quick LR (8) vs Full LR (30): f1 -0.0055 [-0.0187, +0.0062] small or uncertain difference; roc_auc -0.0005 [-0.0029, +0.0018] no meaningful difference
+  Quick RF (8) vs Quick LR (8): f1 +0.0094 [-0.0011, +0.0211] small or uncertain difference; roc_auc +0.0031 [+0.0010, +0.0055] small but consistent improvement
+zone thresholds: {'lr': {'low': 0.17, 'high': 0.92, 'target': 0.98}, 'rf': {'low': 0.22, 'high': 0.94, 'target': 0.98}}
+  val Quick RF (8): {'Safe': (380, 0.021), 'Suspicious': (147, 0.741), 'Likely phishing': (331, 0.985)}
+  val Quick LR (8): {'Safe': (367, 0.019), 'Suspicious': (145, 0.662), 'Likely phishing': (346, 0.983)}
+  test Quick RF (8): {'Safe': (352, 0.014), 'Suspicious': (166, 0.59), 'Likely phishing': (341, 1.0)}
+  test Quick LR (8): {'Safe': (337, 0.021), 'Suspicious': (162, 0.5), 'Likely phishing': (360, 0.989)}
+test agreement zone / binary: 0.916 0.967
+[quick] done in 248.8s

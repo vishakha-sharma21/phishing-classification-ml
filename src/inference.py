@@ -1,4 +1,4 @@
-"""Load saved artifacts and score pre-extracted feature rows (no training, no network).
+"""Load the app's saved Logistic Regression and score pre-extracted feature rows (no training, no network).
 
 Used by app.py; kept separate so it can be unit-tested without Streamlit.
 """
@@ -15,71 +15,82 @@ import pandas as pd
 from src.config import MODELS_DIR, REPORTS_DIR
 from src.logistic_regression import LogisticRegression
 from src.preprocessing import FeatureEncoder, validate_features
-from src.random_forest import RandomForest
+
+
+# ------------------------------------------------------------ quick (8-input) model
+
+VERDICTS = ("Safe", "Suspicious", "Likely phishing")
 
 
 @dataclass
-class Artifacts:
-    """Everything needed to score new rows, exactly as saved by ``python -m src.train``."""
+class QuickArtifacts:
+    """The app's 8-input Logistic Regression, as saved by ``python -m src.train --stage quick``."""
 
-    feature_order: list[str]
+    features: list[str]
     allowed_values: dict[str, list[int]]
     lr: LogisticRegression
     lr_encoder: FeatureEncoder
     lr_threshold: float
-    rf: RandomForest
-    rf_encoder: FeatureEncoder
-    rf_threshold: float
+    lr_zones: dict[str, float]
+    lr_mean: np.ndarray
+    lr_baseline_logit: float
+    zone_rule: str
     results: dict
 
 
-def load_artifacts(models_dir: Path = MODELS_DIR, reports_dir: Path = REPORTS_DIR) -> Artifacts:
-    """Read preprocessing config, both models and the results file.
+def load_quick_artifacts(models_dir: Path = MODELS_DIR, reports_dir: Path = REPORTS_DIR) -> QuickArtifacts:
+    """Read the quick Logistic Regression and the results file.
 
     Raises:
-        FileNotFoundError: if training has not been run.
-        ValueError: if a model's input names do not match the preprocessing config.
+        FileNotFoundError: if the quick stage has not been run.
+        ValueError: if the saved encoder does not match the weights.
     """
-    pre = json.loads((models_dir / "preprocessing.json").read_text(encoding="utf-8"))
-    lr_doc = json.loads((models_dir / "logistic_regression.json").read_text(encoding="utf-8"))
-    rf_doc = json.loads((models_dir / "random_forest.json").read_text(encoding="utf-8"))
+    lr_doc = json.loads((models_dir / "quick_logistic_regression.json").read_text(encoding="utf-8"))
     results_path = reports_dir / "results.json"
     results = json.loads(results_path.read_text(encoding="utf-8")) if results_path.exists() else {}
-
-    lr_enc = FeatureEncoder.from_dict(pre["encoders"][lr_doc["encoding"]])
-    rf_enc = FeatureEncoder.from_dict(pre["encoders"][rf_doc["encoding"]])
-    for doc, e in ((lr_doc, lr_enc), (rf_doc, rf_enc)):
-        if doc["input_names"] != e.output_names:
-            raise ValueError("saved model inputs do not match the preprocessing configuration")
-    return Artifacts(
-        feature_order=pre["feature_order"],
-        allowed_values={k: [int(v) for v in vs] for k, vs in pre["allowed_values"].items()},
+    lr_enc = FeatureEncoder.from_dict(lr_doc["encoder"])
+    if lr_enc.features != lr_doc["features"] or len(lr_enc.output_names) != len(lr_doc["weights"]):
+        raise ValueError("quick LR encoder does not match its weights")
+    return QuickArtifacts(
+        features=lr_doc["features"], allowed_values=lr_enc.levels,
         lr=LogisticRegression.from_dict(lr_doc), lr_encoder=lr_enc, lr_threshold=float(lr_doc["threshold"]),
-        rf=RandomForest.from_dict(rf_doc), rf_encoder=rf_enc, rf_threshold=float(rf_doc["threshold"]),
-        results=results,
+        lr_zones=lr_doc["zones"], lr_mean=np.asarray(lr_doc["contribution_mean"], dtype=float),
+        lr_baseline_logit=float(lr_doc["baseline_logit"]), zone_rule=lr_doc["zone_rule"], results=results,
     )
 
 
-def prepare_input(df: pd.DataFrame, art: Artifacts) -> tuple[pd.DataFrame | None, list[str]]:
-    """Validate a user frame; return (clean integer frame in training order, problems)."""
+def verdict_for(p: float | np.ndarray, zones: dict[str, float]) -> np.ndarray:
+    """Three-level verdict: Safe (p < low), Suspicious, Likely phishing (p ≥ high)."""
+    p = np.asarray(p, dtype=float)
+    return np.array(VERDICTS)[np.where(p >= zones["high"], 2, np.where(p >= zones["low"], 1, 0))]
+
+
+def predict_quick(df: pd.DataFrame, art: QuickArtifacts) -> pd.DataFrame:
+    """Phishing probability and three-level verdict from the quick Logistic Regression.
+
+    Raises:
+        ValueError: if any of the 8 inputs is missing or has an invalid code.
+    """
     problems = validate_features(df, art.allowed_values)
     if len(df) == 0:
         problems.append("no rows supplied")
     if problems:
-        return None, problems
-    clean = df[art.feature_order].apply(pd.to_numeric).astype(int)
-    return clean, []
-
-
-def predict(df: pd.DataFrame, art: Artifacts) -> pd.DataFrame:
-    """Phishing probability and class from both models for each validated row."""
-    clean, problems = prepare_input(df, art)
-    if problems:
         raise ValueError("; ".join(problems))
-    p_lr = art.lr.predict_proba(art.lr_encoder.transform(clean))
-    p_rf = art.rf.predict_proba(art.rf_encoder.transform(clean))
-    label = lambda p, t: np.where(p >= t, "phishing", "legitimate")  # noqa: E731
-    return pd.DataFrame({
-        "lr_phishing_probability": p_lr.round(4), "lr_prediction": label(p_lr, art.lr_threshold),
-        "rf_phishing_probability": p_rf.round(4), "rf_prediction": label(p_rf, art.rf_threshold),
-    }, index=df.index)
+    clean = df[art.features].apply(pd.to_numeric).astype(int)
+    p = art.lr.predict_proba(art.lr_encoder.transform(clean))
+    return pd.DataFrame({"phishing_probability": p.round(4), "verdict": verdict_for(p, art.lr_zones)},
+                        index=df.index)
+
+
+def lr_contributions(row: dict[str, int], art: QuickArtifacts) -> pd.Series:
+    """Each answer's push on the Logistic Regression log-odds, sorted by size.
+
+    contribution_f = Σ_j w_j (x_j − mean_j) over the encoded columns j of feature f, where
+    mean_j is the training average. Positive pushes towards phishing, negative towards
+    legitimate, and the contributions sum to logit(p) − baseline_logit (an average training site).
+    """
+    x = art.lr_encoder.transform(pd.DataFrame([row]))[0]
+    per_col = art.lr.w * (x - art.lr_mean)
+    owner = [name.split("=")[0] for name in art.lr_encoder.output_names]
+    contrib = pd.Series(per_col).groupby(owner).sum().reindex(art.features).fillna(0.0)
+    return contrib.reindex(contrib.abs().sort_values(ascending=False).index)

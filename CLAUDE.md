@@ -14,6 +14,22 @@
 - Phase 2 (EDA, `src/eda.py`, `notebooks/eda.ipynb`): label-dependent stats use train only; test untouched.
   `prefix_suffix = 1` is 100% legitimate (all phishing rows are -1); `sslfinal_state`, `having_sub_domain`,
   `web_traffic` are non-monotone in their codes (motivates one-hot for LR).
+- Phases 3–11 completed on user instruction ("finish the project"). Pipeline: `python -m src.train`
+  (stages prepare, baselines, lr, tree, rf, evaluate, overfit, interpret) → `reports/results.json`.
+  Selected: LR one-hot λ=1e-4 lr=1/L thr 0.35; RF 100 trees, depth ∞, leaf 1, max_features 15, thr 0.46.
+  Docs (`README.md`, `reports/report.md`, `reports/viva_qa.md`) quote numbers from results.json — re-check them
+  with `python -m src.check_docs` after any retraining.
+- App update (user instruction, 2026-10-28): the app uses separate 8-input "quick" models (`--stage quick`;
+  top 8 by training MI; `models/quick_*.json`), a three-zone verdict (cut-offs on validation, 98% recall/precision
+  targets), an LR contribution panel (w·(x − train mean)) and an agreement badge. The user asked to REMOVE all
+  limitations/disclaimer text from the app — this overrides Phase 10's "display limitations" rule; limitations
+  live in `reports/report.md` §14 only.
+- LR-only presentation (user instruction, 2026-10-28): the Decision Tree and Random Forest are REMOVED from every
+  deliverable (app, report.md, viva_qa.md, README, Word report, PPT, full-pipeline notebook). Logistic Regression is
+  the only model presented; this overrides §1's "two primary algorithms". The app uses the quick 8-input LR only
+  (gauge = LR, cut-offs 0.17 / 0.92, no agreement badge). `src/decision_tree.py`, `src/random_forest.py`, their
+  tests and the `tree` / `rf` / RF parts of `src.train` still exist and run, but are not reported.
+  LR-only figures: `python -m src.lr_only_figures` (lr_05–lr_10).
 
 ## 1. Project Overview
 

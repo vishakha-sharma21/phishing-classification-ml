@@ -1,0 +1,51 @@
+Partitions: {'cleaned': 5721, 'train': 4004, 'val': 858, 'test': 859} phishing rate: {'train': 0.5165, 'val': 0.5163}
+
+Top 10 single-feature validation ROC-AUC:
+                   feature  val_roc_auc  ci_low  ci_high  train_roc_auc
+            sslfinal_state       0.8976  0.8776   0.9168         0.8970
+             url_of_anchor       0.8583  0.8356   0.8803         0.8757
+               web_traffic       0.7182  0.6854   0.7479         0.6704
+         having_sub_domain       0.6924  0.6583   0.7268         0.7061
+             links_in_tags       0.6550  0.6176   0.6872         0.6346
+               request_url       0.6391  0.6036   0.6683         0.6183
+             prefix_suffix       0.6386  0.6170   0.6585         0.6258
+                       sfh       0.6339  0.6061   0.6589         0.6240
+domain_registration_length       0.5987  0.5662   0.6304         0.6056
+    links_pointing_to_page       0.5829  0.5486   0.6149         0.5639
+
+Bottom 5:
+            feature  val_roc_auc  ci_low  ci_high  train_roc_auc
+          dnsrecord       0.4994  0.4703   0.5295         0.5190
+         rightclick       0.4960  0.4812   0.5106         0.5031
+               port       0.4879  0.4637   0.5142         0.5090
+       on_mouseover       0.4863  0.4633   0.5086         0.5093
+submitting_to_email       0.4827  0.4574   0.5111         0.5007
+
+Top feature-label Cramér's V (train):
+                   feature  cramers_v  mutual_info_bits             phishing_rate_by_value
+            sslfinal_state     0.7778            0.5092 {-1: 0.8894, 0: 0.9938, 1: 0.1402}
+             url_of_anchor     0.7181            0.4676 {-1: 0.9907, 0: 0.3381, 1: 0.0931}
+         having_sub_domain     0.3996            0.1195  {-1: 0.621, 0: 0.7009, 1: 0.2541}
+             prefix_suffix     0.3843            0.1406                {-1: 0.588, 1: 0.0}
+               web_traffic     0.3268            0.0789 {-1: 0.6431, 0: 0.7041, 1: 0.3498}
+                       sfh     0.2827            0.0602 {-1: 0.5964, 0: 0.4096, 1: 0.2247}
+             links_in_tags     0.2538            0.0476 {-1: 0.6748, 0: 0.4508, 1: 0.3714}
+               request_url     0.2373            0.0412            {-1: 0.6488, 1: 0.4097}
+domain_registration_length     0.2203            0.0357              {-1: 0.435, 1: 0.666}
+              google_index     0.1356            0.0137            {-1: 0.6687, 1: 0.4859}
+
+Strongest feature pairs: [{'a': 'favicon', 'b': 'popupwindow', 'v': 0.9291}, {'a': 'favicon', 'b': 'port', 'v': 0.8116}, {'a': 'shortining_service', 'b': 'double_slash_redirecting', 'v': 0.8028}, {'a': 'port', 'b': 'submitting_to_email', 'v': 0.7776}, {'a': 'port', 'b': 'popupwindow', 'v': 0.7522}, {'a': 'double_slash_redirecting', 'b': 'https_token', 'v': 0.7362}]
+
+Median # of -1 codes: {'phishing': 10.0, 'legitimate': 7.0}
+
+Duplicate leakage diagnostic: {'raw_val_rows': 1659, 'raw_val_rows_with_exact_twin_in_train': 1055, 'raw_val_overlap_percent': np.float64(63.59), 'lookup_accuracy_on_overlapping_val_rows': 0.9725, 'cleaned_val_overlap_percent': 0.0}
+
+Figures:
+  reports/figures/01_class_distribution.png
+  reports/figures/02_duplicate_statistics.png
+  reports/figures/03_feature_values_by_class.png
+  reports/figures/04_phishing_rate_by_value.png
+  reports/figures/05_association_heatmap.png
+  reports/figures/06_feature_target_association.png
+  reports/figures/07_single_feature_val_auc.png
+  reports/figures/08_minus_one_count_by_class.png
